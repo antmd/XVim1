@@ -13,27 +13,29 @@
 #import "XVimKeyStroke.h"
 #import "XVimKeymap.h"
 #import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
+#import "XVimSourceView+Xcode.h"
 #import "XVimOptions.h"
 #import "Logger.h"
+#import <objc/runtime.h>
 
 @interface XVimWindow() {
 	XVimEvaluator* _currentEvaluator;
 	XVimKeymapContext* _keymapContext;
 	NSMutableDictionary* _localMarks; // key = single letter mark name. value = NSRange (wrapped in a NSValue) for mark location
 	BOOL _handlingMouseEvent;
+	NSString *_staticString;
 }
 - (void)recordEvent:(XVimKeyStroke*)keyStroke intoRegister:(XVimRegister*)xregister fromEvaluator:(XVimEvaluator*)evaluator;
-- (void)setArgumentString:(NSString*)string;
 @end
 
 @implementation XVimWindow
-@synthesize tag = _tag;
-@synthesize commandLine = _commandLine;
 @synthesize sourceView = _sourceView;
 
-- (id) initWithFrame:(NSRect)frameRect{
-    if (self = [super initWithFrame:frameRect]) {
-        _tag = XVIM_TAG;
+- (id)init 
+{
+    if (self = [super init]) {
+		_staticString = @"";
 		[self setEvaluator:[[XVimNormalEvaluator alloc] init]];
         _localMarks = [[NSMutableDictionary alloc] init];
 		_keymapContext = [[XVimKeymapContext alloc] init];
@@ -61,14 +63,15 @@
 			[_currentEvaluator didEndHandlerInWindow:self];
 		}
 		
-		_currentEvaluator = evaluator;
-		[evaluator becameHandlerInWindow:self];
-		
 		[_keymapContext clear];
 		
-		[self setModeString:[evaluator modeString]];
-		[self setArgumentString:[evaluator argumentDisplayString]];
+		XVimCommandLine *commandLine = [[XVim instance] commandLine];
+		[commandLine setModeString:[[evaluator modeString] stringByAppendingString:_staticString]];
+		[commandLine setArgumentString:[evaluator argumentDisplayString]];
 		[[self sourceView] updateInsertionPointStateAndRestartTimer];
+		
+		_currentEvaluator = evaluator;
+		[evaluator becameHandlerInWindow:self];
 	}
 }
 
@@ -107,13 +110,14 @@
 		argString = [_currentEvaluator argumentDisplayString];
 	}
     
-	[self setArgumentString:argString];
-    [self.commandLine setNeedsDisplay:YES];
+	XVimCommandLine *commandLine = [[XVim instance] commandLine];
+	[commandLine setArgumentString:argString];
+    [commandLine setNeedsDisplay:YES];
     return YES;
 }
 
 - (void)handleKeyStroke:(XVimKeyStroke*)keyStroke {
-    [self clearErrorMessage];
+    [[XVim instance] clearErrorMessage];
     XVim *xvim = [XVim instance];
 	XVimEvaluator* currentEvaluator = _currentEvaluator;
 	XVimEvaluator* nextEvaluator = [currentEvaluator eval:keyStroke inWindow:self];
@@ -138,48 +142,9 @@
 	[self setEvaluator:evaluator];
 }
 
-	
-- (void)setModeString:(NSString*)string
-{
-	XVimCommandLine *commandLine = self.commandLine;
-	[commandLine setModeString:string];
-}
-
-- (void)setArgumentString:(NSString*)string
-{
-	XVimCommandLine *commandLine = self.commandLine;
-	[commandLine setArgumentString:string];
-}
-
-- (void)setStaticString:(NSString*)string
-{
-	XVimCommandLine *commandLine = self.commandLine;
-	[commandLine setStaticString:string];
-}
-
-- (void)errorMessage:(NSString *)message ringBell:(BOOL)ringBell {
-	XVimCommandLine *commandLine = self.commandLine;
-    [commandLine errorMessage:message];
-    if (ringBell) {
-        [[XVim instance] ringBell];
-    }
-    return;
-}
-
-- (void)clearErrorMessage
-{
-	XVimCommandLine *commandLine = self.commandLine;
-    [commandLine errorMessage:@""];
-}
-
-- (XVimCommandField*)commandField 
-{
-	XVimCommandLine *commandLine = self.commandLine;
-	return [commandLine commandField];
-}
-
 - (void)commandFieldLostFocus:(XVimCommandField*)commandField
 {
+	[commandField setDelegate:nil];
 	[self willSetEvaluator:nil];
 	[self setEvaluator:nil];
 }
@@ -188,7 +153,7 @@
     XVim *xvim = [XVim instance];
     if (xvim.recordingRegister == nil){
         xvim.recordingRegister = xregister;
-        [self setStaticString:@"recording"];
+        _staticString = @"recording";
         // when you record into a register you clear out any previous recording
         // unless it was capitalized
         [xvim.recordingRegister clear];
@@ -203,7 +168,7 @@
         [xvim ringBell];
     }else{
         xvim.recordingRegister = nil;
-        [self setStaticString: @""];
+		_staticString = @"";
     }
 }
 
@@ -260,6 +225,18 @@
 - (void)drawInsertionPointInRect:(NSRect)rect color:(NSColor*)color
 {
 	[_currentEvaluator drawInsertionPointInRect:rect color:color inWindow:self heightRatio:1];
+}
+
+static char s_associate_key = 0;
+
++ (XVimWindow*)associateOf:(id)object
+{
+	return (XVimWindow*)objc_getAssociatedObject(object, &s_associate_key);
+}
+
+- (void)associateWith:(id)object
+{
+	objc_setAssociatedObject(object, &s_associate_key, self, OBJC_ASSOCIATION_RETAIN);
 }
 
 @end

@@ -6,15 +6,18 @@
 //  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 //
 
-#import "DVTSourceCodeEditorHook.h"
-#import "IDESourceCodeEditor.h"
+#import "IDESourceCodeEditorHook.h"
+#import "IDEKit.h"
 #import "XVimWindow.h"
 #import "Hooker.h"
 #import "Logger.h"
 #import "XVimStatusLine.h"
 #import "XVimWindowManager.h"
 
-@implementation DVTSourceCodeEditorHook
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-W"
+
+@implementation IDESourceCodeEditorHook
 
 + (void) hook
 {

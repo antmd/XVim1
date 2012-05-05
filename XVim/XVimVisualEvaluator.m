@@ -5,6 +5,8 @@
 
 #import "XVimVisualEvaluator.h"
 #import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
+#import "XVimSourceView+Xcode.h"
 #import "XVimWindow.h"
 #import "XVimKeyStroke.h"
 #import "Logger.h"
@@ -185,9 +187,9 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 	[view scrollTo:[window insertionPoint]];
 	
 	if (_mode == MODE_CHARACTER) {
-		_operationRange = [window selectedRange];
+		_operationRange = [[window sourceView] selectedRange];
 	} else {
-		NSRange selectedRange = [window selectedRange];
+		NSRange selectedRange = [[window sourceView] selectedRange];
 		NSUInteger startLine = [view lineNumber:selectedRange.location];
 		NSUInteger endLine = [view lineNumber:selectedRange.location + selectedRange.length];
 		_operationRange = NSMakeRange(startLine, endLine - startLine);
@@ -491,7 +493,7 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 								   [sourceView scrollTo:[window insertionPoint]];
 								   [sourceView showFindIndicatorForRange:found];
 							   } else {
-								   [window errorMessage:[NSString stringWithFormat: @"Cannot find '%@'",searcher.lastSearchDisplayString] ringBell:TRUE];
+								   [[XVim instance] errorMessage:[NSString stringWithFormat: @"Cannot find '%@'",searcher.lastSearchDisplayString] ringBell:TRUE];
 							   }
                                return self;
 						   }

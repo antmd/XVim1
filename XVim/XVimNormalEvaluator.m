@@ -21,6 +21,8 @@
 #import "XVimGActionEvaluator.h"
 #import "XVimMarkSetEvaluator.h"
 #import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
+#import "XVimSourceView+Xcode.h"
 #import "XVimKeyStroke.h"
 #import "XVimWindow.h"
 #import "XVim.h"
@@ -705,7 +707,7 @@
 								   [sourceView scrollTo:[window insertionPoint]];
 								   [sourceView showFindIndicatorForRange:found];
 							   } else {
-								   [window errorMessage:[NSString stringWithFormat: @"Cannot find '%@'",searcher.lastSearchDisplayString] ringBell:TRUE];
+								   [[XVim instance] errorMessage:[NSString stringWithFormat: @"Cannot find '%@'",searcher.lastSearchDisplayString] ringBell:TRUE];
 							   }
 							   return nil;
 						   }

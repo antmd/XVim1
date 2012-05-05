@@ -6,8 +6,9 @@
 //  Copyright (c) 2012 JugglerShu.Net. All rights reserved.
 //
 
-#import "XVimSourceView.h"
 #import "XVimOperatorEvaluator.h"
+#import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
 #import "XVimOperatorAction.h"
 #import "XVimTextObjectEvaluator.h"
 #import "XVimKeyStroke.h"
@@ -94,9 +95,9 @@
     XVimWordInfo info;
     NSUInteger from = [[window sourceView] selectedRange].location;
     NSUInteger to = [[window sourceView] wordsForward:from count:[self numericArg] option:MOTION_OPTION_NONE info:(XVimWordInfo*)&info];
-    if( info.isFirstWordInALine ){
+    if (info.isFirstWordInALine && info.lastEndOfLine != NSNotFound) {
         return [self _motionFixedFrom:from To:info.lastEndOfLine Type:CHARACTERWISE_INCLUSIVE inWindow:window];
-    }else{
+    } else {
         return [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
     }
 }
@@ -105,9 +106,9 @@
     XVimWordInfo info;
     NSUInteger from = [[window sourceView] selectedRange].location;
     NSUInteger to = [[window sourceView] wordsForward:from count:[self numericArg] option:BIGWORD info:(XVimWordInfo*)&info];
-    if( info.isFirstWordInALine ){
+    if (info.isFirstWordInALine && info.lastEndOfLine != NSNotFound) {
         return [self _motionFixedFrom:from To:info.lastEndOfLine Type:CHARACTERWISE_INCLUSIVE inWindow:window];
-    }else{
+    } else {
         return [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
     }
 }

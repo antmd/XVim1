@@ -8,18 +8,9 @@
 
 #import "XVimWindowManager.h"
 
-#import "IDEEditorModeViewController.h"
-#import "IDEWorkspaceTabController.h"
-#import "IDEEditorMultipleContext.h"
-#import "IDESourceCodeEditor.h"
-#import "IDEEditorGeniusMode.h"
-#import "IDEFileTextSettings.h"
-#import "IDEEditorArea.h"
-
-#import "DVTFoldingTextStorage.h"
+#import "IDEKit.h"
+#import "IDESourceEditor.h"
 #import "DVTAutoLayoutView.h"
-#import "DVTSourceTextView.h"
-#import "DVTBorderedView.h"
 #import "XVimSourceView.h"
 #import "XVimWindow.h"
 #import "Logger.h"

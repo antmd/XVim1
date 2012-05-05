@@ -11,6 +11,8 @@
 #import "XVimKeyStroke.h"
 #import "XVimWindow.h"
 #import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
+#import "XVim.h"
 
 @interface XVimMarkMotionEvaluator() {
 	XVimMarkOperator _markOperator;
@@ -43,7 +45,7 @@
 
 	NSValue* v = [[window getLocalMarks] valueForKey:mark];
 	if (v == nil) {
-		[window errorMessage:@"Mark not set" ringBell:YES];
+		[[XVim instance] errorMessage:@"Mark not set" ringBell:YES];
 		return NSNotFound;
 	}
 	

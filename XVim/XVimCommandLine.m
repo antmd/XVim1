@@ -10,11 +10,8 @@
 #import "XVimCommandField.h"
 #import "Logger.h"
 #import "XVimWindow.h"
-#import "DVTSourceTextView.h"
-#import "DVTFoldingTextStorage.h"
-#import "DVTFontAndColorsTheme.h"
-#import "DVTChooserView.h"
-#import "DVTFondAndColorTheme.h"
+#import "DVTKit.h"
+#import <objc/runtime.h>
 
 #define COMMAND_FIELD_HEIGHT 18.0
 
@@ -22,35 +19,31 @@
 @interface XVimCommandLine() {
 @private
     XVimCommandField* _command;
-    NSTextField* _static;
-    NSTextField* _error;
-    NSTextField* _argument;
+    NSInsetTextView* _static;
+    NSInsetTextView* _error;
+    NSInsetTextView* _argument;
     NSTimer* _errorTimer;
 }
 @end
 
 @implementation XVimCommandLine
-@synthesize tag = _tag;
-- (id) init{
+- (id) init
+{
     self = [super initWithFrame:NSMakeRect(0, 0, 100, COMMAND_FIELD_HEIGHT)];
     if (self) {
         [self setBoundsOrigin:NSMakePoint(0,0)];
         
         // Static Message ( This is behind the command view if the command is active)
-        _static = [[NSTextField alloc] initWithFrame:NSMakeRect(0,0,100,COMMAND_FIELD_HEIGHT)];
+        _static = [[NSInsetTextView alloc] initWithFrame:NSMakeRect(0,0,100,COMMAND_FIELD_HEIGHT)];
         [_static setEditable:NO];
-        [_static setBordered:NO];
         [_static setSelectable:NO];
-        [[_static cell] setFocusRingType:NSFocusRingTypeNone];
         [_static setBackgroundColor:[NSColor textBackgroundColor]]; 
         [self addSubview:_static];
         
         // Error Message
-        _error = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, COMMAND_FIELD_HEIGHT)];
+        _error = [[NSInsetTextView alloc] initWithFrame:NSMakeRect(0, 0, 100, COMMAND_FIELD_HEIGHT)];
         [_error setEditable:NO];
-        [_error setBordered:NO];
         [_error setSelectable:NO];
-        [[_error cell] setFocusRingType:NSFocusRingTypeNone];
         [_error setBackgroundColor:[NSColor redColor]]; 
         [_error setHidden:YES];
         [self addSubview:_error];
@@ -65,15 +58,11 @@
         [self addSubview:_command];
         
 		// Argument View
-		_argument = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 0, COMMAND_FIELD_HEIGHT)];
+		_argument = [[NSInsetTextView alloc] initWithFrame:NSMakeRect(0, 0, 0, COMMAND_FIELD_HEIGHT)];
         [_argument setEditable:NO];
-        [_argument setBordered:NO];
         [_argument setSelectable:NO];
-        [[_argument cell] setFocusRingType:NSFocusRingTypeNone];
         [_argument setBackgroundColor:[NSColor clearColor]];
         [self addSubview:_argument];
-        
-        self.tag = XVIM_CMDLINE_TAG;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(fontAndColorSourceTextSettingsChanged:) name:@"DVTFontAndColorSourceTextSettingsChangedNotification" object:nil];
     }
@@ -93,23 +82,18 @@
 
 - (void)setModeString:(NSString*)string
 {
-    [_static setStringValue:string];
-}
-
-- (void)setStaticString:(NSString*)string
-{
-	[_static setStringValue:string];
+    [_static setString:string];
 }
 
 - (void)setArgumentString:(NSString*)string{
-    [_argument setStringValue:string];
+    [_argument setString:string];
 }
 
 - (void)errorMessage:(NSString*)string
 {
 	NSString* msg = string;
 	if( [msg length] != 0 ){
-		[_error setStringValue:msg];
+		[_error setString:msg];
 		[_error setHidden:NO];
 		[_errorTimer invalidate];
 		_errorTimer = [NSTimer timerWithTimeInterval:3.0 target:self selector:@selector(errorMsgExpired) userInfo:nil repeats:NO];
@@ -129,14 +113,25 @@
     NSRect frame = [parent frame];
     [NSClassFromString(@"DVTFontAndColorTheme") addObserver:self forKeyPath:@"currentTheme" options:NSKeyValueObservingOptionNew context:nil];
     [self setBoundsOrigin:NSMakePoint(0,0)];
+	
+    DVTFontAndColorTheme* theme = [NSClassFromString(@"DVTFontAndColorTheme") performSelector:@selector(currentTheme)];
+	NSFont *sourceFont = [theme sourcePlainTextFont];
+	
+	// Calculate inset
+	CGFloat horizontalInset = 0;
+	CGFloat verticalInset = MAX((COMMAND_FIELD_HEIGHT - [sourceFont pointSize]) / 2, 0);
+	CGSize inset = CGSizeMake(horizontalInset, verticalInset);
     
     // Set colors
-    DVTFontAndColorTheme* theme = [NSClassFromString(@"DVTFontAndColorTheme") performSelector:@selector(currentTheme)];
     [_static setBackgroundColor:[theme sourceTextBackgroundColor]];
+	[_static setFont:sourceFont];
     [_command setTextColor:[theme sourcePlainTextColor]];
     [_command setBackgroundColor:[theme sourceTextBackgroundColor]];
     [_command setInsertionPointColor:[theme sourceTextInsertionPointColor]];
+	[_command setFont:sourceFont];
     [_argument setTextColor:[theme sourcePlainTextColor]];
+	[_argument setFont:sourceFont];
+	[_error setFont:sourceFont];
 	
 	CGFloat argumentSize = MIN(frame.size.width, 100);
     
@@ -166,6 +161,11 @@
         self.frame = NSMakeRect(0, border.frame.size.height, parent.frame.size.width, COMMAND_FIELD_HEIGHT);
         nsview.frame = NSMakeRect(0, border.frame.size.height+COMMAND_FIELD_HEIGHT, parent.frame.size.width, parent.frame.size.height-border.frame.size.height-COMMAND_FIELD_HEIGHT);
     }
+	
+	[_static setInset:inset];
+	[_error setInset:inset];
+	[_argument setInset:inset];
+	[_command setInset:inset];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
@@ -184,4 +184,17 @@
 - (void)fontAndColorSourceTextSettingsChanged:(NSNotification*)notification{
     [self layoutCmdline:[self superview]];
 }
+
+static char s_associate_key = 0;
+
++ (XVimCommandLine*)associateOf:(id)object
+{
+	return (XVimCommandLine*)objc_getAssociatedObject(object, &s_associate_key);
+}
+
+- (void)associateWith:(id)object
+{
+	objc_setAssociatedObject(object, &s_associate_key, self, OBJC_ASSOCIATION_RETAIN);
+}
+
 @end

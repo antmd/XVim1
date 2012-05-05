@@ -6,16 +6,16 @@
 //  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 //
 
-#import "DVTEditorAreaHook.h"
-#import "IDEEditorArea.h"
+#import "IDEEditorAreaHook.h"
+#import "IDEKit.h"
 #import "Hooker.h"
 #import "Logger.h"
 #import "XVimCommandLine.h"
 #import "XVimWindow.h"
-#import "DVTBorderedView.h"
-#import "DVTChooserView.h"
+#import "DVTKit.h"
+#import "XVim.h"
 
-@implementation DVTEditorAreaHook
+@implementation IDEEditorAreaHook
 /**
  * IDEEditorArea is a area including primary editor and assistant editor and debug area (The view right of the navigator)
  * This class hooks IDEEditorArea and does some works.
@@ -42,11 +42,13 @@
     object_getInstanceVariable(self, "_editorAreaAutoLayoutView", (void**)&layoutView); // The view contains editors and border view
     
     // Check if we already have command line in the _editorAreaAutoLayoutView.
-    XVimCommandLine* cmd = (XVimCommandLine*)[layoutView viewWithTag:XVIM_CMDLINE_TAG];
+    XVimCommandLine* cmd = [XVimCommandLine associateOf:layoutView];
     if( nil == cmd ){
-        // We do not have commnad line yet.
+        // We do not have command line yet.
         cmd = [[[XVimCommandLine alloc] init] autorelease];
+		[[XVim instance] setCommandLine:cmd];
         [layoutView addSubview:cmd];
+		
         // This notification is to resize command line view according to the editor area size.
         [[NSNotificationCenter defaultCenter] addObserver:cmd selector:@selector(didFrameChanged:) name:NSViewFrameDidChangeNotification  object:layoutView];
         if( [[layoutView subviews] count] > 0 ){
@@ -54,20 +56,11 @@
             DVTBorderedView* border = [[layoutView subviews] objectAtIndex:0];
             // We need to know if border view is hidden or not to place editors and command line correctly.
             [border addObserver:cmd forKeyPath:@"hidden" options:NSKeyValueObservingOptionNew context:nil];
-            
             //NSView* view = [[layoutView subviews] objectAtIndex:0];
             
         }
     }
     
-    // We need to insert XVimWindow object. It handles all the input to the editors in the tab.
-    NSView* window = [layoutView viewWithTag:XVIM_TAG];
-    if( nil == window ){
-        XVimWindow* window = [[[XVimWindow alloc] init] autorelease];
-        window.commandLine = cmd;
-        cmd.commandField.delegate = window;
-        [layoutView addSubview:window];
-    }
 }
 
 @end

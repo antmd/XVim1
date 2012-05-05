@@ -9,13 +9,13 @@
 #import "XVimEvaluator.h"
 #import "XVimMotionEvaluator.h"
 #import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
 #import "XVimKeyStroke.h"
 #import "Logger.h"
 #import "XVimWindow.h"
 #import "XVimKeymapProvider.h"
 #import "XVimNormalEvaluator.h"
 #import "XVimVisualEvaluator.h"
-#import "XVimSourceView.h"
 
 @interface XVimEvaluator() {
 	XVimEvaluatorContext *_context;
@@ -92,7 +92,7 @@
 
 - (XVimEvaluator*)handleMouseEvent:(NSEvent*)event inWindow:(XVimWindow*)window
 {
-	NSRange range = [window selectedRange];
+	NSRange range = [[window sourceView] selectedRange];
 	return range.length == 0 ? [[XVimNormalEvaluator alloc] init] : [[XVimVisualEvaluator alloc] initWithContext:[[XVimEvaluatorContext alloc] init]
 																											mode:MODE_CHARACTER 
 																									withRange:range];

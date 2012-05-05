@@ -8,6 +8,8 @@
 
 #import "XVimInsertEvaluator.h"
 #import "XVimSourceView.h"
+#import "XVimSourceView+Vim.h"
+#import "XVimSourceView+Xcode.h"
 #import "XVimWindow.h"
 #import "XVim.h"
 #import "Logger.h"
@@ -67,12 +69,12 @@
 
 - (void)becameHandlerInWindow:(XVimWindow*)window{
 	[super becameHandlerInWindow:window];
-    self.startRange = [window selectedRange];
+    self.startRange = [[window sourceView] selectedRange];
 }
 
 - (XVimEvaluator*)handleMouseEvent:(NSEvent*)event inWindow:(XVimWindow*)window
 {
-	NSRange range = [window selectedRange];
+	NSRange range = [[window sourceView] selectedRange];
 	return range.length == 0 ? self : [[XVimVisualEvaluator alloc] initWithContext:[[XVimEvaluatorContext alloc] init]
 																			  mode:MODE_CHARACTER 
 																	  withRange:range];
@@ -103,12 +105,26 @@
 }
 
 - (NSString*)getInsertedTextInWindow:(XVimWindow*)window {
-    NSRange endRange = [window selectedRange];
-    NSRange textRange;
-    if (endRange.location > self.startRange.location){
-        textRange = NSMakeRange(self.startRange.location, endRange.location - self.startRange.location);
+    XVimSourceView* view = [window sourceView];
+    NSUInteger startLoc = self.startRange.location;
+    NSUInteger endLoc = [view selectedRange].location;
+    NSRange textRange = NSMakeRange(NSNotFound, 0);
+    
+    if( [[view string] length] == 0 ){
+        return @"";
+    }
+    // If some text are deleted while editing startLoc could be out of range of the view's string.
+    if( ( startLoc >= [[view string] length] ) ){
+        startLoc = [[view string] length] - 1;
+    }
+    
+    // Is this really what we want to do?
+    // This means just moving cursor forward or backward and escape from insert mode generates the inserted test this method return.
+    //    -> The answer is 'OK'. see onMovementKeyPressed: method how it treats the inserted text.
+    if (endLoc > startLoc ){
+        textRange = NSMakeRange(startLoc, endLoc - startLoc);
     }else{
-        textRange = NSMakeRange(endRange.location, self.startRange.location - endRange.location);
+        textRange = NSMakeRange(endLoc , startLoc - endLoc);
     }
     
 	XVimSourceView *sourceView = [window sourceView];
@@ -125,6 +141,8 @@
 }
 
 - (void)onMovementKeyPressed:(XVimWindow*)window {
+    // TODO: we also have to handle when cursor is movieng by mouse clicking.
+    //       it should have the same effect on movementKeyPressed property.
     _insertedEventsAbort = YES;
     if (!self.movementKeyPressed){
         self.movementKeyPressed = YES;
@@ -135,7 +153,7 @@
     }
     
     // Store off the new start range
-    self.startRange = [window selectedRange];
+    self.startRange = [[window sourceView] selectedRange];
 }
 
 - (void)willEndHandlerInWindow:(XVimWindow*)window 
@@ -188,7 +206,7 @@
         self.movementKeyPressed = NO;
         
         // Store off the new start range
-        self.startRange = [window selectedRange];
+        self.startRange = [[window sourceView] selectedRange];
     }
     
     if (nextEvaluator != nil){
