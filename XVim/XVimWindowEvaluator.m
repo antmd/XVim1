@@ -14,6 +14,20 @@
 
 @implementation XVimWindowEvaluator
 
+- (XVimEvaluator*)j:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveFocusToNextEditor];
+    return nil;
+}
+
+
+- (XVimEvaluator*)k:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveFocusToPreviousEditor];
+    return nil;
+}
+
+
 - (XVimEvaluator*)n:(XVimWindow*)window
 {
     [[XVimWindowManager instance] addNewEditorWindow];
@@ -22,7 +36,7 @@
 
 - (XVimEvaluator*)o:(XVimWindow*)window
 {
-	[[XVimWindowManager instance] closeAllButActive];
+	[[XVimWindowManager instance] closeAllButCurrentWindow];
     return nil;
 }
 
@@ -32,7 +46,7 @@
 }
 
 - (XVimEvaluator*)q:(XVimWindow*)window{
-    [[XVimWindowManager instance] removeEditorWindow];
+    [[XVimWindowManager instance] removeCurrentEditorWindow];
     return nil;
 }
 

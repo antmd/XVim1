@@ -12,6 +12,8 @@
 @class IDESourceCodeEditor;
 
 @interface XVimWindowManager : NSObject
+@property(assign) IDESourceCodeEditor *currentEditor;
+
 + (void)createWithEditor:(IDESourceCodeEditor*)editor;
 + (XVimWindowManager*)instance;
 
@@ -24,6 +26,10 @@
 
 // These DO NOT use the assisstant editor
 - (void)addNewEditorWindow;
+- (void)closeAllButCurrentWindow;
+- (void)removeCurrentEditorWindow;
 - (void)splitEditorWindow:(XVimWindow*)window;
 - (void)defaultLayoutAllWindows;
+- (void)moveFocusToNextEditor;
+- (void)moveFocusToPreviousEditor;
 @end

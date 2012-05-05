@@ -15,26 +15,34 @@
 #import "XVimWindow.h"
 #import "Logger.h"
 #import "Hooker.h"
+#import "XVim.h"
 
 static XVimWindowManager *_instance = nil;
 
 @interface XVimWindowManager() {
-	IDESourceCodeEditor *_editor;
+    NSArray *_editors;
+	IDESourceCodeEditor *_baseEditor;
+	IDESourceCodeEditor *_currentEditor;
 }
 - (void)setHorizontal;
 - (void)setVertical;
-- (DVTAutoLayoutView*)getLayoutView;
-- (void)addEditorWindowWithTextStorage:(id)textStorage;
 - (BOOL)hasEditorView:(NSView*)view;
+- (DVTAutoLayoutView*)editorAreaAutoLayoutView;
+- (void)addEditorWindowWithTextStorage:(id)textStorage;
+- (void)removeEditorWindow:(IDESourceCodeEditor*)editor;
 @end
 
 @implementation XVimWindowManager
+
+@synthesize currentEditor = _currentEditor;
 
 + (void)createWithEditor:(IDESourceCodeEditor*)editor
 {
     if (_instance == nil) {
         XVimWindowManager *instance = [[self alloc] init];
-        instance->_editor = editor;
+        instance->_baseEditor = editor;
+        instance->_currentEditor = nil;
+        instance->_editors = [NSArray arrayWithObject:instance->_baseEditor];
         _instance = instance;
     }
 }
@@ -46,7 +54,7 @@ static XVimWindowManager *_instance = nil;
 
 - (void)addEditorWindow
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = _baseEditor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDEEditorArea *editorArea = [workspaceTabController editorArea];
     if ([editorArea editorMode] != 1){
@@ -70,7 +78,7 @@ static XVimWindowManager *_instance = nil;
 
 - (void)removeEditorWindow
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = _baseEditor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDEEditorArea *editorArea = [workspaceTabController editorArea];
     if ([editorArea editorMode] != 1){
@@ -87,7 +95,7 @@ static XVimWindowManager *_instance = nil;
 
 - (void)closeAllButActive 
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = _baseEditor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDEEditorArea *editorArea = [workspaceTabController editorArea];
     if ([editorArea editorMode] != 1){
@@ -103,21 +111,21 @@ static XVimWindowManager *_instance = nil;
 
 - (void)setHorizontal
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = _baseEditor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     [workspaceTabController changeToAssistantLayout_BH:self];
 }
 
 - (void)setVertical
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = _baseEditor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     [workspaceTabController changeToAssistantLayout_BV:self];
 }
 
-- (DVTAutoLayoutView*)getLayoutView
+- (DVTAutoLayoutView*)editorAreaAutoLayoutView
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = _baseEditor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDEEditorArea *editorArea = [workspaceTabController editorArea];
 
@@ -129,8 +137,7 @@ static XVimWindowManager *_instance = nil;
 
 - (void)defaultLayoutAllWindows
 {
-    DVTAutoLayoutView *layoutView = [self getLayoutView];
- //   [layoutView layoutTopDown];
+    DVTAutoLayoutView *layoutView = [self editorAreaAutoLayoutView];
 
     NSRect frame = [layoutView frame];
     NSRect bounds = [layoutView bounds];
@@ -170,11 +177,13 @@ static XVimWindowManager *_instance = nil;
     [bundle load];
 
     IDESourceCodeEditor *editor = [[NSClassFromString(@"IDESourceCodeEditor") alloc] initWithNibName:@"IDESourceCodeEditor" bundle:bundle document:document];
+    editor.fileTextSettings = [[NSClassFromString(@"IDEFileTextSettings") alloc] init];
     [editor loadView];
     
-    editor.fileTextSettings = [[NSClassFromString(@"IDEFileTextSettings") alloc] init];
+    [[self editorAreaAutoLayoutView] addSubview:editor.containerView];
+    [editor takeFocus];
     
-    [[self getLayoutView] addSubview:editor.containerView];
+    _editors = [_editors arrayByAddingObject:editor];
     [self defaultLayoutAllWindows];
 }
 
@@ -193,6 +202,65 @@ static XVimWindowManager *_instance = nil;
 {
     id view = [window.sourceView view];
     [self addEditorWindowWithTextStorage:[view textStorage]];
+}
+
+- (void)removeCurrentEditorWindow
+{
+    [self removeEditorWindow:_currentEditor];
+}
+
+- (void)removeEditorWindow:(IDESourceCodeEditor*)editorToRemove
+{
+    // Cannot remove the base editor
+    if (editorToRemove == _baseEditor)
+    {
+        [[XVim instance] ringBell];
+        return;
+    }
+
+    [editorToRemove.containerView removeFromSuperview];
+    NSUInteger index = [_editors indexOfObject:editorToRemove];
+    _editors = [_editors filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(IDESourceCodeEditor *editor, NSDictionary *bindings){
+        return editor != editorToRemove;
+    }]];
+
+    // Let the next editor take focus.
+    [[_editors objectAtIndex:MIN(index, [_editors count] - 1)] takeFocus];
+    [self defaultLayoutAllWindows];
+}
+
+- (void)closeAllButCurrentWindow
+{
+    NSArray *editorsCopy = [NSArray arrayWithArray:_editors];
+    [editorsCopy enumerateObjectsUsingBlock:^(IDESourceCodeEditor *editor, NSUInteger index, BOOL *stop){
+        if (editor != _currentEditor){
+            [self removeEditorWindow:editor];
+        }
+    }];
+}
+
+- (void)moveFocusToNextEditor
+{
+    NSUInteger index = [_editors indexOfObject:_currentEditor];
+    if (index == NSNotFound || index <= 0){
+        [[XVim instance] ringBell];
+        return;
+    }
+
+    IDESourceCodeEditor *editor = [_editors objectAtIndex:index - 1];
+    [editor takeFocus];
+}
+
+- (void)moveFocusToPreviousEditor
+{
+    NSUInteger index = [_editors indexOfObject:_currentEditor];
+    if (index == NSNotFound || (index + 1 >= ([_editors count]))){
+        [[XVim instance] ringBell];
+        return;
+    }
+
+    IDESourceCodeEditor *editor = [_editors objectAtIndex:index + 1];
+    [editor takeFocus];
 }
 
 - (BOOL)hasEditorView:(NSView*)view
