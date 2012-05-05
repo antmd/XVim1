@@ -8,10 +8,11 @@
 
 #import <Foundation/Foundation.h>
 #import "DVTSourceTextView.h"
+#import "IDEEditor.h"
 
 @class IDEWorkspaceTabController;
 
-@interface IDESourceCodeEditor : NSViewController
+@interface IDESourceCodeEditor : IDEEditor
 {
     NSScrollView *_scrollView;
     DVTSourceTextView *_textView;
@@ -81,7 +82,7 @@
 //@property DVTSourceExpression *selectedExpression; // @synthesize selectedExpression=_selectedExpression;
 @property(assign) /*IDESourceCodeEditorContainerView*/ NSView *containerView; // @synthesize containerView=_containerView;
 @property(assign) DVTSourceTextView *textView; // @synthesize textView=_textView;
-//@property NSScrollView *scrollView; // @synthesize scrollView=_scrollView;
+@property(assign) NSScrollView *scrollView; // @synthesize scrollView=_scrollView;
 - (id)_documentLocationForLineNumber:(long long)arg1;
 - (void)_createFileBreakpointAtLocation:(long long)arg1;
 - (id)_breakpointManager;
@@ -244,5 +245,9 @@
 
 - (IDEWorkspaceTabController*)workspaceTabController;
 - (NSRange)textView_:(NSTextView *)textView willChangeSelectionFromCharacterRange:(NSRange)oldSelectedCharRange toCharacterRange:(NSRange)newSelectedCharRange;
+- (void)setEditorContext_:(IDEEditorContext *)editorContext;
+- (void)setContainerView_:(NSView *)containerView;
+- (void)setFileTextSettings_:(id)settings;
+- (void)loadView_;
 
 @end

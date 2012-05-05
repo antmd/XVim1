@@ -10,6 +10,7 @@
 @class DVTUndoManager;
 
 @interface DVTFoldingTextStorage : NSTextStorage
+- (id)initWithTextStorage:(id)arg1;
 - (DVTFontAndColorsTheme*)fontAndColorTheme;
 - (void)indentCharacterRange:(NSRange)range undoManager:(DVTUndoManager*)undoManager;
 - (NSUInteger)columnForPositionConvertingTabs:(NSUInteger)position;

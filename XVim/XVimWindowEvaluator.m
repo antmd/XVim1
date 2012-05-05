@@ -8,33 +8,35 @@
 
 #import "XVimWindowEvaluator.h"
 #import "XVimWindowManager.h"
+#import "XVimSourceView.h"
+#import "XVimWindow.h"
+#import "Logger.h"
 
 @implementation XVimWindowEvaluator
 
-- (XVimEvaluator*)n:(id)arg
+- (XVimEvaluator*)n:(XVimWindow*)window
 {
-    [[XVimWindowManager instance] addEditorWindow];
+    [[XVimWindowManager instance] addNewEditorWindow];
     return nil;
 }
 
-- (XVimEvaluator*)o:(id)arg
+- (XVimEvaluator*)o:(XVimWindow*)window
 {
 	[[XVimWindowManager instance] closeAllButActive];
     return nil;
 }
 
-- (XVimEvaluator*)s:(id)arg{
-    [[XVimWindowManager instance] addEditorWindowHorizontal];
-    
+- (XVimEvaluator*)s:(XVimWindow*)window{
+    [[XVimWindowManager instance] splitEditorWindow:window];
     return nil;
 }
 
-- (XVimEvaluator*)q:(id)arg{
+- (XVimEvaluator*)q:(XVimWindow*)window{
     [[XVimWindowManager instance] removeEditorWindow];
     return nil;
 }
 
-- (XVimEvaluator*)v:(id)arg{
+- (XVimEvaluator*)v:(XVimWindow*)window{
     [[XVimWindowManager instance] addEditorWindowVertical];
     return nil;
 }
