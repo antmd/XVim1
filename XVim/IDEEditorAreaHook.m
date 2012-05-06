@@ -8,12 +8,14 @@
 
 #import "IDEEditorAreaHook.h"
 #import "IDEKit.h"
+#import "IDESourceEditor.h"
 #import "Hooker.h"
 #import "Logger.h"
 #import "XVimCommandLine.h"
 #import "XVimWindow.h"
 #import "DVTKit.h"
 #import "XVim.h"
+#import "XVimWindowManager.h"
 
 @implementation IDEEditorAreaHook
 /**
@@ -32,7 +34,14 @@
 +(void)hook{
     Class c = NSClassFromString(@"IDEEditorArea");
     
-    [Hooker hookMethod:@selector(viewDidInstall) ofClass:c withMethod:class_getInstanceMethod([self class], @selector(viewDidInstall) ) keepingOriginalWith:@selector(viewDidInstall_)];
+    [Hooker hookMethod:@selector(viewDidInstall) ofClass:c
+            withMethod:class_getInstanceMethod([self class],@selector(viewDidInstall) )
+   keepingOriginalWith:@selector(viewDidInstall_)];
+
+
+    [Hooker hookMethod:@selector(_openEditorOpenSpecifier:editorContext:takeFocus:) ofClass:c
+            withMethod:class_getInstanceMethod([self class], @selector(_openEditorOpenSpecifier:editorContext:takeFocus:) )
+   keepingOriginalWith:@selector(_openEditorOpenSpecifier_:editorContext:takeFocus:)];
 }
 
 - (void)viewDidInstall{
@@ -61,6 +70,26 @@
         }
     }
     
+}
+
+- (void)_openEditorOpenSpecifier:(IDEEditorOpenSpecifier*)specifier editorContext:(IDEEditorContext*)context takeFocus:(BOOL)takeFocus
+{
+    TRACE_LOG(@"specifier: %@ editorContext: %@ takeFocus: %d", specifier, context, takeFocus);
+    IDEEditorArea *base = (IDEEditorArea*)self;
+    IDESourceCodeEditor *baseEditor = [XVimWindowManager instance].baseEditor;
+    IDESourceCodeEditor *currentEditor = [XVimWindowManager instance].currentEditor;
+    if (currentEditor == baseEditor)
+    {
+        [base _openEditorOpenSpecifier_:specifier editorContext:context takeFocus:takeFocus];
+    } else {
+        TRACE_LOG(@"install new document into editor: %@", currentEditor);
+        NSURL* documentURL;
+        [base viewDidInstall_];
+        object_getInstanceVariable(specifier, "_documentURL", (void**)&documentURL);
+        NSDictionary *attributes = [currentEditor.sourceCodeDocument _readOptionsDictionaryForURL:documentURL preferredEncoding:4 inOutData:nil];
+        [currentEditor.sourceCodeDocument _configureDocumentReadFromURL:documentURL orData:nil ofType:[specifier.fileDataType stringRepresentation] usedEncoding:4 preferredLineEndings:0 readOutAttributes:attributes];
+        [currentEditor.sourceCodeDocument readFromURL:documentURL ofType:[specifier.fileDataType stringRepresentation] error:nil];
+    }
 }
 
 @end

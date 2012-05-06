@@ -77,6 +77,11 @@ static XVimWindowManager *_currentInstance = nil;
     return _editors;
 }
 
+- (IDESourceCodeEditor*)baseEditor
+{
+    return _baseEditor;
+}
+
 - (void)addEditorWindow
 {
     IDESourceCodeEditor *editor = _baseEditor;
@@ -213,8 +218,7 @@ static XVimWindowManager *_currentInstance = nil;
 
 - (void)addNewEditorWindow
 {
-    IDESourceCodeDocument *document = [[NSClassFromString(@"IDESourceCodeDocument") alloc] init];
-    [self addEditorWindowWithDocument:document];
+    [self addEditorWindowWithDocument:[_currentEditor.sourceCodeDocument emptyPrivateCopy]];
 }
 
 - (void)splitEditorWindow

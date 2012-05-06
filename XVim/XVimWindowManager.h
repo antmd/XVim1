@@ -12,6 +12,7 @@
 @class IDESourceCodeEditor;
 
 @interface XVimWindowManager : NSObject
+@property(readonly) IDESourceCodeEditor *baseEditor;
 @property(assign) IDESourceCodeEditor *currentEditor;
 
 + (void)createWithEditor:(IDESourceCodeEditor*)editor;
