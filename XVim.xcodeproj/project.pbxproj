@@ -213,6 +213,7 @@
 		F15805C61530B4000031175A /* XVimWindowEvaluator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimWindowEvaluator.m; path = XVim/XVimWindowEvaluator.m; sourceTree = SOURCE_ROOT; };
 		F17D0139150861DC00A8111B /* XVimRegister.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimRegister.h; path = XVim/XVimRegister.h; sourceTree = SOURCE_ROOT; };
 		F17D013A150861DC00A8111B /* XVimRegister.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimRegister.m; path = XVim/XVimRegister.m; sourceTree = SOURCE_ROOT; };
+		F197B3D215566DB5008A3596 /* DVTAutoLayoutView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DVTAutoLayoutView.h; path = XVim/DVTAutoLayoutView.h; sourceTree = SOURCE_ROOT; };
 		F1C1E513150475ED0005C1CB /* XVimEqualEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimEqualEvaluator.h; path = XVim/XVimEqualEvaluator.h; sourceTree = SOURCE_ROOT; };
 		F1C1E514150475ED0005C1CB /* XVimEqualEvaluator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimEqualEvaluator.m; path = XVim/XVimEqualEvaluator.m; sourceTree = SOURCE_ROOT; };
 		F1F2426B15041A9B00F706A4 /* XVimZEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimZEvaluator.h; path = XVim/XVimZEvaluator.h; sourceTree = SOURCE_ROOT; };
@@ -483,6 +484,7 @@
 		C38A5B481527C9EE00E1448D /* Xcode */ = {
 			isa = PBXGroup;
 			children = (
+				F197B3D215566DB5008A3596 /* DVTAutoLayoutView.h */,
 				A2508B511551D47C0083F9ED /* DVTFoundation.h */,
 				A2508B521551D47C0083F9ED /* DVTKit.h */,
 				A2508B531551D47C0083F9ED /* IDEFoundation.h */,
