@@ -72,23 +72,19 @@
     
 }
 
-- (void)_openEditorOpenSpecifier:(IDEEditorOpenSpecifier*)specifier editorContext:(IDEEditorContext*)context takeFocus:(BOOL)takeFocus
-{
-    TRACE_LOG(@"specifier: %@ editorContext: %@ takeFocus: %d", specifier, context, takeFocus);
+- (void)_openEditorOpenSpecifier:(IDEEditorOpenSpecifier*)specifier editorContext:(IDEEditorContext*)context takeFocus:(BOOL)takeFocus {
     IDEEditorArea *base = (IDEEditorArea*)self;
     IDESourceCodeEditor *baseEditor = [XVimWindowManager instance].baseEditor;
     IDESourceCodeEditor *currentEditor = [XVimWindowManager instance].currentEditor;
-    if (currentEditor == baseEditor)
-    {
+    if (currentEditor == baseEditor) {
         [base _openEditorOpenSpecifier_:specifier editorContext:context takeFocus:takeFocus];
     } else {
-        TRACE_LOG(@"install new document into editor: %@", currentEditor);
         NSURL* documentURL;
-        [base viewDidInstall_];
         object_getInstanceVariable(specifier, "_documentURL", (void**)&documentURL);
         NSDictionary *attributes = [currentEditor.sourceCodeDocument _readOptionsDictionaryForURL:documentURL preferredEncoding:4 inOutData:nil];
         [currentEditor.sourceCodeDocument _configureDocumentReadFromURL:documentURL orData:nil ofType:[specifier.fileDataType stringRepresentation] usedEncoding:4 preferredLineEndings:0 readOutAttributes:attributes];
         [currentEditor.sourceCodeDocument readFromURL:documentURL ofType:[specifier.fileDataType stringRepresentation] error:nil];
+        currentEditor.sourceCodeDocument.fileURL = documentURL;
     }
 }
 

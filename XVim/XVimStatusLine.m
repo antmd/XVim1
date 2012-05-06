@@ -81,7 +81,19 @@
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
     if( [keyPath isEqualToString:@"document"] ){
-        [_status setString:[[[object document] fileURL] path]];
+        NSString *path = [[[object document] fileURL] path];
+        if (path == nil){
+            path = @"";
+        }
+
+        [_status setString:path];
+    } else if( [keyPath isEqualToString:@"fileURL"] ){
+        NSString *path = [[object fileURL] path];
+        if (path == nil){
+            path = @"";
+        }
+
+        [_status setString:path];
     }
 }
 
