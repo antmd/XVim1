@@ -33,4 +33,6 @@
 - (void)defaultLayoutAllWindows;
 - (void)moveFocusToNextEditor;
 - (void)moveFocusToPreviousEditor;
+- (void)saveCurrentWindow;
+- (void)saveCurrentWindowTo:(NSString*)relativePath;
 @end

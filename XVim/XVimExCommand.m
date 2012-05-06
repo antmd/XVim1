@@ -18,6 +18,7 @@
 #import "XVimKeyStroke.h"
 #import "XVimKeymap.h"
 #import "XVimOptions.h"
+#import "XVimWindowManager.h"
 
 @implementation XVimExArg
 @synthesize arg,cmd,forceit,lineBegin,lineEnd,addr_count;
@@ -868,12 +869,20 @@
 
 - (void)write:(XVimExArg*)args inWindow:(XVimWindow*)window
 { // :w
-    [NSApp sendAction:@selector(saveDocument:) to:nil from:self];
+    if (args.arg != nil){
+        [[XVimWindowManager instance] saveCurrentWindowTo:args.arg];
+    } else {
+        [[XVimWindowManager instance] saveCurrentWindow];
+    }
 }
 
 - (void)exit:(XVimExArg*)args inWindow:(XVimWindow*)window
 { // :wq
-    [NSApp sendAction:@selector(saveDocument:) to:nil from:self];
+    if (args.arg != nil){
+        [[XVimWindowManager instance] saveCurrentWindowTo:args.arg];
+    } else {
+        [[XVimWindowManager instance] saveCurrentWindow];
+    }
     [NSApp terminate:self];
 }
 

@@ -305,4 +305,19 @@ static XVimWindowManager *_currentInstance = nil;
     return found;
 }
 
+- (void)saveCurrentWindow
+{
+    NSSaveOperationType saveType = NSSaveOperation;
+    IDESourceCodeDocument *document = self.currentEditor.sourceCodeDocument;
+    [document saveToURL:document.fileURL ofType:document.fileType forSaveOperation:saveType error:nil];
+}
+
+- (void)saveCurrentWindowTo:(NSString*)relativePath
+{
+    NSSaveOperationType saveType = NSSaveToOperation;
+    IDESourceCodeDocument *document = self.currentEditor.sourceCodeDocument;
+    NSURL *url = [NSURL URLWithString:relativePath relativeToURL:document.fileURL];
+    [document saveToURL:url ofType:document.fileType forSaveOperation:saveType error:nil];
+}
+
 @end
