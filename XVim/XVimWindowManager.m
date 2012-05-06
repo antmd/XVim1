@@ -17,13 +17,15 @@
 #import "Hooker.h"
 #import "XVim.h"
 
-static XVimWindowManager *_instance = nil;
+static NSArray *_instances = nil;
+static XVimWindowManager *_currentInstance = nil;
 
 @interface XVimWindowManager() {
     NSArray *_editors;
 	IDESourceCodeEditor *_baseEditor;
 	IDESourceCodeEditor *_currentEditor;
 }
+- (NSArray*)editors;
 - (void)setHorizontal;
 - (void)setVertical;
 - (BOOL)hasEditorView:(NSView*)view;
@@ -38,18 +40,41 @@ static XVimWindowManager *_instance = nil;
 
 + (void)createWithEditor:(IDESourceCodeEditor*)editor
 {
-    if (_instance == nil) {
+    // Set up the array of instances
+    if (_instances == nil)
+    {
+        _instances = [NSArray array];
+    }
+
+    // See if the editor already has a window manager
+    NSUInteger index = [_instances indexOfObjectPassingTest:^BOOL(XVimWindowManager *manager, NSUInteger idx, BOOL *stop){
+        *stop = (manager->_baseEditor == editor) || [[manager editors] containsObject:editor];
+        return *stop;
+    }];
+
+    if (index == NSNotFound) {
+        // Create the window manager for this new editor
         XVimWindowManager *instance = [[self alloc] init];
-        instance->_baseEditor = editor;
-        instance->_currentEditor = nil;
-        instance->_editors = [NSArray arrayWithObject:instance->_baseEditor];
-        _instance = instance;
+        _instances = [_instances arrayByAddingObject:instance];
+        _currentInstance = instance;
+
+        instance->_currentEditor = editor;
+        _currentInstance->_baseEditor = editor;
+        instance->_editors = [NSArray arrayWithObject:editor];
+    } else {
+        // Set the window manager for this editor
+        _currentInstance = [_instances objectAtIndex:index];
     }
 }
 
 + (XVimWindowManager*)instance
 {
-	return _instance;
+	return _currentInstance;
+}
+
+- (NSArray*)editors
+{
+    return _editors;
 }
 
 - (void)addEditorWindow
@@ -178,12 +203,12 @@ static XVimWindowManager *_instance = nil;
 
     IDESourceCodeEditor *editor = [[NSClassFromString(@"IDESourceCodeEditor") alloc] initWithNibName:@"IDESourceCodeEditor" bundle:bundle document:document];
     editor.fileTextSettings = [[NSClassFromString(@"IDEFileTextSettings") alloc] init];
-    [editor loadView];
+    _editors = [_editors arrayByAddingObject:editor]; // Must do this before calling loadView
     
+    [editor loadView];
     [[self editorAreaAutoLayoutView] addSubview:editor.containerView];
     [editor takeFocus];
-    
-    _editors = [_editors arrayByAddingObject:editor];
+
     [self defaultLayoutAllWindows];
 }
 

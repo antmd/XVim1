@@ -203,6 +203,8 @@
 
         IDESourceCodeEditor *editor = nil;
         object_getInstanceVariable((IDESourceCodeEditorContainerView*)view, "_editor", (void**)&editor);
+
+        [XVimWindowManager createWithEditor:editor];
         [XVimWindowManager instance].currentEditor = editor;
     }
     return b;

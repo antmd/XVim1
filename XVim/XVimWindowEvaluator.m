@@ -14,6 +14,12 @@
 
 @implementation XVimWindowEvaluator
 
+- (XVimEvaluator*)c:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] removeCurrentEditorWindow];
+    return nil;
+}
+
 - (XVimEvaluator*)j:(XVimWindow*)window
 {
     [[XVimWindowManager instance] moveFocusToNextEditor];
