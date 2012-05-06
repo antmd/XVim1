@@ -209,7 +209,7 @@ static XVimWindowManager *_currentInstance = nil;
     IDESourceCodeEditor *editor = [[NSClassFromString(@"IDESourceCodeEditor") alloc] initWithNibName:@"IDESourceCodeEditor" bundle:bundle document:document];
     editor.fileTextSettings = [[NSClassFromString(@"IDEFileTextSettings") alloc] init];
     _editors = [_editors arrayByAddingObject:editor]; // Must do this before calling loadView
-    
+
     [editor loadView];
     [[self editorAreaAutoLayoutView] addSubview:editor.containerView];
     [editor didSetupEditor];
@@ -220,7 +220,10 @@ static XVimWindowManager *_currentInstance = nil;
 
 - (void)addNewEditorWindow
 {
-    [self addEditorWindowWithDocument:[_currentEditor.sourceCodeDocument emptyPrivateCopy]];
+    IDESourceCodeDocument *document = [_currentEditor.sourceCodeDocument emptyPrivateCopy];
+    document.fileURL = [_currentEditor.sourceCodeDocument.fileURL URLByDeletingLastPathComponent];
+
+    [self addEditorWindowWithDocument:document];
 }
 
 - (void)splitEditorWindow
@@ -238,7 +241,7 @@ static XVimWindowManager *_currentInstance = nil;
     // Cannot remove the base editor
     if (editorToRemove == _baseEditor)
     {
-        [[XVim instance] ringBell];
+        [[XVim instance] errorMessage:@"Cannot remove this editor." ringBell:TRUE];
         return;
     }
 
@@ -307,17 +310,29 @@ static XVimWindowManager *_currentInstance = nil;
 
 - (void)saveCurrentWindow
 {
+    NSNumber *isDirectory;
     NSSaveOperationType saveType = NSSaveOperation;
     IDESourceCodeDocument *document = self.currentEditor.sourceCodeDocument;
-    [document saveToURL:document.fileURL ofType:document.fileType forSaveOperation:saveType error:nil];
+    [document.fileURL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:NULL];
+    if (document.fileURL.isFileURL && ![isDirectory boolValue]){
+        [document saveToURL:document.fileURL ofType:document.fileType forSaveOperation:saveType error:nil];
+    }else {
+        [[XVim instance] errorMessage:@"Path is not valid!" ringBell:TRUE];
+    }
 }
 
 - (void)saveCurrentWindowTo:(NSString*)relativePath
 {
+    NSNumber *isDirectory;
     NSSaveOperationType saveType = NSSaveToOperation;
     IDESourceCodeDocument *document = self.currentEditor.sourceCodeDocument;
     NSURL *url = [NSURL URLWithString:relativePath relativeToURL:document.fileURL];
-    [document saveToURL:url ofType:document.fileType forSaveOperation:saveType error:nil];
+    [url getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:NULL];
+    if (document.fileURL.isFileURL && ![isDirectory boolValue]){
+        [document saveToURL:url ofType:document.fileType forSaveOperation:saveType error:nil];
+    }else {
+        [[XVim instance] errorMessage:@"Path is not valid!" ringBell:TRUE];
+    }
 }
 
 @end
