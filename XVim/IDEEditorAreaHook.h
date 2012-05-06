@@ -16,4 +16,5 @@
 
 @interface IDEEditorArea(Hook)
 - (void)viewDidInstall_;
+- (void)_openEditorOpenSpecifier_:(IDEEditorOpenSpecifier*)specifier editorContext:(IDEEditorContext*)context takeFocus:(BOOL)takeFocus;
 @end

@@ -17,6 +17,8 @@
 #import "XVimStatusLine.h"
 #import "XVim.h"
 #import "XVimOptions.h"
+#import "IDESourceEditor.h"
+#import "XVimWindowManager.h"
 
 @implementation DVTSourceTextViewHook
 
@@ -192,6 +194,18 @@
     BOOL b = [base becomeFirstResponder_];
     if( [base becomeFirstResponder_] ){
         window.sourceView = [[XVimSourceView alloc] initWithView:base];
+
+        NSView *view = base;
+        Class containerClass = NSClassFromString(@"IDESourceCodeEditorContainerView");
+        while (view != nil && ![view isKindOfClass:containerClass]) {
+            view = [view superview];
+        }
+
+        IDESourceCodeEditor *editor = nil;
+        object_getInstanceVariable((IDESourceCodeEditorContainerView*)view, "_editor", (void**)&editor);
+
+        [XVimWindowManager createWithEditor:editor];
+        [XVimWindowManager instance].currentEditor = editor;
     }
     return b;
 }
