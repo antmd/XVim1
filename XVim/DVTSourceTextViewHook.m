@@ -61,8 +61,11 @@
     
     // Hook _drawInsertionPointInRect for Drawing Caret       
     [Hooker hookMethod:@selector(_drawInsertionPointInRect:color:) ofClass:c withMethod:class_getInstanceMethod([self class], @selector(_drawInsertionPointInRect:color:)) keepingOriginalWith:@selector(_drawInsertionPointInRect_:color:)];
-	
+
     [Hooker hookMethod:@selector(viewDidMoveToSuperview) ofClass:c withMethod:class_getInstanceMethod([self class], @selector(viewDidMoveToSuperview) ) keepingOriginalWith:@selector(viewDidMoveToSuperview_)];
+
+    [Hooker hookMethod:@selector(viewDidEndLiveResize) ofClass:c withMethod:class_getInstanceMethod([self class], @selector(viewDidEndLiveResize) ) keepingOriginalWith:@selector(viewDidEndLiveResize_)];
+
     [Hooker hookMethod:@selector(observeValueForKeyPath:ofObject:change:context:) 
 			   ofClass:c withMethod:class_getInstanceMethod([self class], @selector(observeValueForKeyPath:ofObject:change:context:) ) 
    keepingOriginalWith:@selector(observeValueForKeyPath_:ofObject:change:context:)];
@@ -242,6 +245,13 @@
 		[scrollView setHasHorizontalScroller:NO];
 	}
 
+}
+
+- (void)viewDidEndLiveResize{
+	DVTSourceTextView *base = (DVTSourceTextView*)self;
+    [base viewDidEndLiveResize_];
+    
+    [[XVimWindowManager instance] defaultLayoutAllWindows];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath 

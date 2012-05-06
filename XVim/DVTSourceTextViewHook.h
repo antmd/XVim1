@@ -30,4 +30,5 @@
 - (void)drawInsertionPointInRect_:(NSRect)rect color:(NSColor*)color turnedOn:(BOOL)flag;
 - (BOOL)becomeFirstResponder_;
 - (void)viewDidMoveToSuperview_;
+- (void)viewDidEndLiveResize_;
 @end
