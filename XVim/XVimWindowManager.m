@@ -30,7 +30,7 @@ static XVimWindowManager *_currentInstance = nil;
 - (void)setVertical;
 - (BOOL)hasEditorView:(NSView*)view;
 - (DVTAutoLayoutView*)editorAreaAutoLayoutView;
-- (void)addEditorWindowWithTextStorage:(id)textStorage;
+- (void)addEditorWindowWithDocument:(IDESourceCodeDocument*)document;
 - (void)removeEditorWindow:(IDESourceCodeEditor*)editor;
 @end
 
@@ -195,9 +195,8 @@ static XVimWindowManager *_currentInstance = nil;
      }];
 }
 
-- (void)addEditorWindowWithTextStorage:(id)textStorage
+- (void)addEditorWindowWithDocument:(IDESourceCodeDocument*)document
 {
-    id document = [[NSClassFromString(@"IDESourceCodeDocument") alloc] init];
     NSBundle *bundle = [NSBundle bundleWithPath:@"/Applications/Xcode.app/Contents/Plugins/IDESourceEditor.ideplugin"];
     [bundle load];
 
@@ -214,19 +213,13 @@ static XVimWindowManager *_currentInstance = nil;
 
 - (void)addNewEditorWindow
 {
-    Class realStorageClass = NSClassFromString(@"DVTTextStorage");
-    id realStorage = [[realStorageClass alloc] initWithString:@""];
-
-    Class foldingStorageClass = NSClassFromString(@"DVTFoldingTextStorage");
-    id foldingStorage = [[foldingStorageClass alloc] initWithTextStorage:realStorage]; 
-
-    [self addEditorWindowWithTextStorage:foldingStorage];
+    IDESourceCodeDocument *document = [[NSClassFromString(@"IDESourceCodeDocument") alloc] init];
+    [self addEditorWindowWithDocument:document];
 }
 
-- (void)splitEditorWindow:(XVimWindow*)window
+- (void)splitEditorWindow
 {
-    id view = [window.sourceView view];
-    [self addEditorWindowWithTextStorage:[view textStorage]];
+    [self addEditorWindowWithDocument:_currentEditor.sourceCodeDocument];
 }
 
 - (void)removeCurrentEditorWindow

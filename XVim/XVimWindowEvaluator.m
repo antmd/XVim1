@@ -47,7 +47,7 @@
 }
 
 - (XVimEvaluator*)s:(XVimWindow*)window{
-    [[XVimWindowManager instance] splitEditorWindow:window];
+    [[XVimWindowManager instance] splitEditorWindow];
     return nil;
 }
 

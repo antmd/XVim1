@@ -25,10 +25,10 @@
 - (void)closeAllButActive;
 
 // These DO NOT use the assisstant editor
+- (void)splitEditorWindow;
 - (void)addNewEditorWindow;
 - (void)closeAllButCurrentWindow;
 - (void)removeCurrentEditorWindow;
-- (void)splitEditorWindow:(XVimWindow*)window;
 - (void)defaultLayoutAllWindows;
 - (void)moveFocusToNextEditor;
 - (void)moveFocusToPreviousEditor;
