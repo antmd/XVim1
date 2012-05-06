@@ -168,7 +168,8 @@ static XVimWindowManager *_currentInstance = nil;
 - (void)defaultLayoutAllWindows
 {
     DVTAutoLayoutView *layoutView = [self editorAreaAutoLayoutView];
-
+    [layoutView setPostsFrameChangedNotifications:YES];
+    
     NSRect frame = [layoutView frame];
     NSRect bounds = [layoutView bounds];
     NSArray *subviews = [layoutView subviews];
@@ -185,19 +186,19 @@ static XVimWindowManager *_currentInstance = nil;
     NSSize newFrameSize = NSMakeSize(frame.size.width, frame.size.height/count);
     NSSize newBoundsSize = NSMakeSize(bounds.size.width, bounds.size.height/count);
     [editorViews enumerateObjectsUsingBlock:^(NSView *view, NSUInteger idx, BOOL *stop){
-         NSRect newFrame;
-         CGFloat index = idx;
-         newFrame.size = newFrameSize;
-         newFrame.origin.x = frame.origin.x;
-         newFrame.origin.y = frame.origin.y + index * newFrame.size.height;
-         [view setFrame:newFrame];
-         
-         NSRect newBounds;
-         newBounds.origin.x = bounds.origin.x;
-         newBounds.origin.y = bounds.origin.y;
-         newBounds.size = newBoundsSize;
-         [view setBounds:newBounds];
-     }];
+        NSRect newFrame;
+        CGFloat index = idx;
+        newFrame.size = newFrameSize;
+        newFrame.origin.x = frame.origin.x;
+        newFrame.origin.y = frame.origin.y + index * newFrame.size.height;
+        [view setFrame:newFrame];
+
+        NSRect newBounds;
+        newBounds.origin.x = bounds.origin.x;
+        newBounds.origin.y = bounds.origin.y;
+        newBounds.size = newBoundsSize;
+        [view setBounds:newBounds];
+    }];
 }
 
 - (void)addEditorWindowWithDocument:(IDESourceCodeDocument*)document
@@ -211,6 +212,7 @@ static XVimWindowManager *_currentInstance = nil;
     
     [editor loadView];
     [[self editorAreaAutoLayoutView] addSubview:editor.containerView];
+    [editor didSetupEditor];
     [editor takeFocus];
 
     [self defaultLayoutAllWindows];

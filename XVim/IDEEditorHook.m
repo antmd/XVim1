@@ -51,6 +51,7 @@
 			
 			// To notify contents of editor is changed
 			[editor addObserver:status forKeyPath:@"document" options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew context:nil];
+			[[editor document] addObserver:status forKeyPath:@"fileURL" options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew context:nil];
 		}
     }
 }
