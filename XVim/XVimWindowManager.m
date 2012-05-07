@@ -273,7 +273,7 @@ static XVimWindowManager *_currentInstance = nil;
     CGFloat count = [_editors count];
     NSRect frame = [layoutView frame];
     if (frame.size.height >= (count + 1) * MIN_EDITOR_VIEW_HEIGHT){
-        NSBundle *bundle = [NSBundle bundleWithPath:@"/Applications/Xcode.app/Contents/Plugins/IDESourceEditor.ideplugin"];
+        NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(@"IDESourceCodeEditor")];
         [bundle load];
         
         IDESourceCodeEditor *editor = [[NSClassFromString(@"IDESourceCodeEditor") alloc] initWithNibName:@"IDESourceCodeEditor" bundle:bundle document:document];
