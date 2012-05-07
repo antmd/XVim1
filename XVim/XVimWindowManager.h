@@ -31,8 +31,14 @@
 - (void)closeAllButCurrentWindow;
 - (void)removeCurrentEditorWindow;
 - (void)defaultLayoutAllWindows;
-- (void)moveFocusToNextEditor;
-- (void)moveFocusToPreviousEditor;
 - (void)saveCurrentWindow;
 - (void)saveCurrentWindowTo:(NSString*)relativePath;
+
+- (void)moveFocusToNextEditor;
+- (void)moveFocusToPreviousEditor;
+- (void)moveFocusToTopEditor;
+- (void)moveFocusToBotomEditor;
+
+- (void)moveCurrentWindowToTop;
+- (void)moveCurrentWindowToBottom;
 @end

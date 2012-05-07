@@ -29,6 +29,7 @@ static XVimWindowManager *_currentInstance = nil;
 - (void)setHorizontal;
 - (void)setVertical;
 - (BOOL)hasEditorView:(NSView*)view;
+- (IDESourceCodeEditorContainerView*)getEditorView:(NSView*)view;
 - (DVTAutoLayoutView*)editorAreaAutoLayoutView;
 - (void)addEditorWindowWithDocument:(IDESourceCodeDocument*)document;
 - (void)removeEditorWindow:(IDESourceCodeEditor*)editor;
@@ -186,8 +187,16 @@ static XVimWindowManager *_currentInstance = nil;
     NSSize newFrameSize = NSMakeSize(frame.size.width, frame.size.height/count);
     NSSize newBoundsSize = NSMakeSize(bounds.size.width, bounds.size.height/count);
     [editorViews enumerateObjectsUsingBlock:^(NSView *view, NSUInteger idx, BOOL *stop){
+        IDESourceCodeEditor* containedEditor = nil;
+        IDESourceCodeEditorContainerView *containerView = [self getEditorView:view];
+        object_getInstanceVariable(containerView, "_editor", (void**)&containedEditor);
+    
+        CGFloat index = [_editors indexOfObjectPassingTest:^BOOL(IDESourceCodeEditor *editor, NSUInteger i, BOOL *stop){
+            *stop = (containedEditor == editor);
+            return *stop;
+        }];
+
         NSRect newFrame;
-        CGFloat index = idx;
         newFrame.size = newFrameSize;
         newFrame.origin.x = frame.origin.x;
         newFrame.origin.y = frame.origin.y + index * newFrame.size.height;
@@ -290,6 +299,46 @@ static XVimWindowManager *_currentInstance = nil;
     [editor takeFocus];
 }
 
+- (void)moveFocusToTopEditor
+{
+    IDESourceCodeEditor *editor = [_editors objectAtIndex:[_editors count] - 1];
+    [editor takeFocus];
+}
+
+- (void)moveFocusToBotomEditor
+{
+    IDESourceCodeEditor *editor = [_editors objectAtIndex:0];
+    [editor takeFocus];
+}
+
+- (void)moveCurrentWindowToTop
+{
+    TRACE_LOG(@"_editors: %@", _editors);
+    _editors = [_editors filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(IDESourceCodeEditor *editor, NSDictionary *bindings){
+        return editor != _currentEditor;
+    }]];
+    
+    TRACE_LOG(@"_editors: %@", _editors);
+    _editors = [_editors arrayByAddingObject:_currentEditor];
+
+    TRACE_LOG(@"_editors: %@", _editors);
+    [self defaultLayoutAllWindows];
+}
+
+- (void)moveCurrentWindowToBottom
+{
+    TRACE_LOG(@"_editors: %@", _editors);
+    _editors = [_editors filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(IDESourceCodeEditor *editor, NSDictionary *bindings){
+        return editor != _currentEditor;
+    }]];
+    
+    TRACE_LOG(@"_editors: %@", _editors);
+    _editors = [[NSArray arrayWithObject:_currentEditor] arrayByAddingObjectsFromArray:_editors];
+
+    TRACE_LOG(@"_editors: %@", _editors);
+    [self defaultLayoutAllWindows];
+}
+
 - (BOOL)hasEditorView:(NSView*)view
 {
     if ([view isKindOfClass:NSClassFromString(@"IDESourceCodeEditorContainerView")]) {
@@ -306,6 +355,22 @@ static XVimWindowManager *_currentInstance = nil;
     }];
     
     return found;
+}
+
+- (IDESourceCodeEditorContainerView*)getEditorView:(NSView*)view
+{
+    if ([view isKindOfClass:NSClassFromString(@"IDESourceCodeEditorContainerView")]) {
+        return (IDESourceCodeEditorContainerView*)view;
+    }
+
+    NSArray *subviews = [view subviews];
+    IDESourceCodeEditorContainerView __block *containerView = nil;
+    [subviews enumerateObjectsUsingBlock:^(NSView *subview, NSUInteger idx, BOOL *stop){
+        containerView = [self getEditorView:subview];
+        *stop = containerView != nil;
+    }];
+    
+    return containerView;
 }
 
 - (void)saveCurrentWindow

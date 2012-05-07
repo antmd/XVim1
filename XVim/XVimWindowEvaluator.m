@@ -14,6 +14,16 @@
 
 @implementation XVimWindowEvaluator
 
+- (XVimEvaluator*)b:(XVimWindow*)window{
+    [[XVimWindowManager instance] moveFocusToBotomEditor];
+    return nil;
+}
+
+- (XVimEvaluator*)C_b:(XVimWindow*)window{
+    [[XVimWindowManager instance] moveFocusToBotomEditor];
+    return nil;
+}
+
 - (XVimEvaluator*)c:(XVimWindow*)window
 {
     [[XVimWindowManager instance] removeCurrentEditorWindow];
@@ -26,6 +36,17 @@
     return nil;
 }
 
+- (XVimEvaluator*)J:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveCurrentWindowToBottom];
+    return nil;
+}
+
+- (XVimEvaluator*)C_j:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveFocusToNextEditor];
+    return nil;
+}
 
 - (XVimEvaluator*)k:(XVimWindow*)window
 {
@@ -33,6 +54,17 @@
     return nil;
 }
 
+- (XVimEvaluator*)K:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveCurrentWindowToTop];
+    return nil;
+}
+
+- (XVimEvaluator*)C_k:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveFocusToPreviousEditor];
+    return nil;
+}
 
 - (XVimEvaluator*)n:(XVimWindow*)window
 {
@@ -51,6 +83,16 @@
     return nil;
 }
 
+- (XVimEvaluator*)t:(XVimWindow*)window{
+    [[XVimWindowManager instance] moveFocusToTopEditor];
+    return nil;
+}
+
+- (XVimEvaluator*)C_t:(XVimWindow*)window{
+    [[XVimWindowManager instance] moveFocusToTopEditor];
+    return nil;
+}
+
 - (XVimEvaluator*)q:(XVimWindow*)window{
     [[XVimWindowManager instance] removeCurrentEditorWindow];
     return nil;
@@ -58,6 +100,17 @@
 
 - (XVimEvaluator*)v:(XVimWindow*)window{
     [[XVimWindowManager instance] addEditorWindowVertical];
+    return nil;
+}
+
+- (XVimEvaluator*)DOWN:(XVimWindow*)window{
+    [[XVimWindowManager instance] moveFocusToNextEditor];
+    return nil;
+}
+
+- (XVimEvaluator*)UP:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] moveFocusToPreviousEditor];
     return nil;
 }
 
