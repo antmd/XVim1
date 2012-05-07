@@ -17,6 +17,8 @@
 #import "Hooker.h"
 #import "XVim.h"
 
+#define MIN_EDITOR_VIEW_HEIGHT 36 
+
 static NSArray *_instances = nil;
 static XVimWindowManager *_currentInstance = nil;
 
@@ -203,34 +205,101 @@ static XVimWindowManager *_currentInstance = nil;
         [view setFrame:newFrame];
 
         NSRect newBounds;
-        newBounds.origin.x = bounds.origin.x;
-        newBounds.origin.y = bounds.origin.y;
         newBounds.size = newBoundsSize;
+        newBounds.origin = bounds.origin;
+        [view setBounds:newBounds];
+    }];
+}
+
+- (void)maximizeCurrentWindow
+{
+    DVTAutoLayoutView *layoutView = [self editorAreaAutoLayoutView];
+    [layoutView setPostsFrameChangedNotifications:YES];
+    
+    NSRect frame = [layoutView frame];
+    NSRect bounds = [layoutView bounds];
+    NSArray *subviews = [layoutView subviews];
+    
+    NSMutableArray *editorViews = [NSMutableArray arrayWithCapacity:[subviews count]];
+    [subviews enumerateObjectsUsingBlock:^(NSView *view, NSUInteger idx, BOOL *stop)
+    {
+        if ([self hasEditorView:view]) {
+            [editorViews addObject:view];
+        }
+    }];
+
+    CGFloat count = [editorViews count] - 1;
+    CGFloat __block yOrigin = frame.origin.y;
+    NSUInteger currentIndex = [_editors indexOfObject:_currentEditor];
+    NSSize minFrameSize = NSMakeSize(frame.size.width, MIN_EDITOR_VIEW_HEIGHT);
+    NSSize minBoundsSize = NSMakeSize(bounds.size.width, MIN_EDITOR_VIEW_HEIGHT);
+    NSSize maxFrameSize = NSMakeSize(frame.size.width, frame.size.height - count * MIN_EDITOR_VIEW_HEIGHT);
+    NSSize maxBoundsSize = NSMakeSize(bounds.size.width, bounds.size.height - count * MIN_EDITOR_VIEW_HEIGHT);
+    [editorViews enumerateObjectsUsingBlock:^(NSView *view, NSUInteger idx, BOOL *stop){
+        IDESourceCodeEditor* containedEditor = nil;
+        IDESourceCodeEditorContainerView *containerView = [self getEditorView:view];
+        object_getInstanceVariable(containerView, "_editor", (void**)&containedEditor);
+    
+        NSUInteger index = [_editors indexOfObjectPassingTest:^BOOL(IDESourceCodeEditor *editor, NSUInteger i, BOOL *stop){
+            *stop = (containedEditor == editor);
+            return *stop;
+        }];
+
+        NSRect newFrame;
+        NSRect newBounds;
+        if (index == currentIndex)
+        {
+            newFrame.size = maxFrameSize;
+            newBounds.size = maxBoundsSize;
+        } else {
+            newFrame.size = minFrameSize;
+            newBounds.size = minBoundsSize;
+        }
+
+        newFrame.origin.x = frame.origin.x;
+        newFrame.origin.y = yOrigin;
+
+        newBounds.origin = bounds.origin;
+        yOrigin += newFrame.size.height;
+        
+        [view setFrame:newFrame];
         [view setBounds:newBounds];
     }];
 }
 
 - (void)addEditorWindowWithDocument:(IDESourceCodeDocument*)document
 {
-    NSBundle *bundle = [NSBundle bundleWithPath:@"/Applications/Xcode.app/Contents/Plugins/IDESourceEditor.ideplugin"];
-    [bundle load];
-
-    IDESourceCodeEditor *editor = [[NSClassFromString(@"IDESourceCodeEditor") alloc] initWithNibName:@"IDESourceCodeEditor" bundle:bundle document:document];
-    editor.fileTextSettings = [[NSClassFromString(@"IDEFileTextSettings") alloc] init];
-    _editors = [_editors arrayByAddingObject:editor]; // Must do this before calling loadView
-
-    [editor loadView];
-    [[self editorAreaAutoLayoutView] addSubview:editor.containerView];
-    [editor didSetupEditor];
-    [editor takeFocus];
-
-    [self defaultLayoutAllWindows];
+    DVTAutoLayoutView *layoutView = [self editorAreaAutoLayoutView];
+    CGFloat count = [_editors count];
+    NSRect frame = [layoutView frame];
+    if (frame.size.height >= (count + 1) * MIN_EDITOR_VIEW_HEIGHT){
+        NSBundle *bundle = [NSBundle bundleWithPath:@"/Applications/Xcode.app/Contents/Plugins/IDESourceEditor.ideplugin"];
+        [bundle load];
+        
+        IDESourceCodeEditor *editor = [[NSClassFromString(@"IDESourceCodeEditor") alloc] initWithNibName:@"IDESourceCodeEditor" bundle:bundle document:document];
+        editor.fileTextSettings = [[NSClassFromString(@"IDEFileTextSettings") alloc] init];
+        _editors = [_editors arrayByAddingObject:editor]; // Must do this before calling loadView
+        
+        [editor loadView];
+        [[self editorAreaAutoLayoutView] addSubview:editor.containerView];
+        [editor didSetupEditor];
+        [editor takeFocus];
+        
+        [self defaultLayoutAllWindows];
+    } else {
+        [[XVim instance] errorMessage:@"Not enough room" ringBell:TRUE];
+    }
 }
 
 - (void)addNewEditorWindow
 {
+    NSNumber *isDirectory;
     IDESourceCodeDocument *document = [_currentEditor.sourceCodeDocument emptyPrivateCopy];
-    document.fileURL = [_currentEditor.sourceCodeDocument.fileURL URLByDeletingLastPathComponent];
+    document.fileURL = _currentEditor.sourceCodeDocument.fileURL;
+    [document.fileURL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:NULL];
+    if (document.fileURL.isFileURL && ![isDirectory boolValue]){
+        document.fileURL = [document.fileURL URLByDeletingLastPathComponent];
+    }
 
     [self addEditorWindowWithDocument:document];
 }
@@ -313,29 +382,21 @@ static XVimWindowManager *_currentInstance = nil;
 
 - (void)moveCurrentWindowToTop
 {
-    TRACE_LOG(@"_editors: %@", _editors);
     _editors = [_editors filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(IDESourceCodeEditor *editor, NSDictionary *bindings){
         return editor != _currentEditor;
     }]];
     
-    TRACE_LOG(@"_editors: %@", _editors);
     _editors = [_editors arrayByAddingObject:_currentEditor];
-
-    TRACE_LOG(@"_editors: %@", _editors);
     [self defaultLayoutAllWindows];
 }
 
 - (void)moveCurrentWindowToBottom
 {
-    TRACE_LOG(@"_editors: %@", _editors);
     _editors = [_editors filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(IDESourceCodeEditor *editor, NSDictionary *bindings){
         return editor != _currentEditor;
     }]];
     
-    TRACE_LOG(@"_editors: %@", _editors);
     _editors = [[NSArray arrayWithObject:_currentEditor] arrayByAddingObjectsFromArray:_editors];
-
-    TRACE_LOG(@"_editors: %@", _editors);
     [self defaultLayoutAllWindows];
 }
 

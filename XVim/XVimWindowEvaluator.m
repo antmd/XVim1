@@ -103,12 +103,23 @@
     return nil;
 }
 
-- (XVimEvaluator*)DOWN:(XVimWindow*)window{
+- (XVimEvaluator*)Down:(XVimWindow*)window{
     [[XVimWindowManager instance] moveFocusToNextEditor];
     return nil;
 }
 
-- (XVimEvaluator*)UP:(XVimWindow*)window
+- (XVimEvaluator*)EQUAL:(XVimWindow*)window{
+    [[XVimWindowManager instance] defaultLayoutAllWindows];
+    return nil;
+}
+
+- (XVimEvaluator*)UNDERSCORE:(XVimWindow*)window
+{
+    [[XVimWindowManager instance] maximizeCurrentWindow];
+    return nil;
+}
+
+- (XVimEvaluator*)Up:(XVimWindow*)window
 {
     [[XVimWindowManager instance] moveFocusToPreviousEditor];
     return nil;

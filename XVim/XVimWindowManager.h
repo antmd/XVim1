@@ -41,4 +41,6 @@
 
 - (void)moveCurrentWindowToTop;
 - (void)moveCurrentWindowToBottom;
+
+- (void)maximizeCurrentWindow;
 @end
