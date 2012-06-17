@@ -10,9 +10,25 @@
 #import "DVTSourceTextViewHook.h"
 #import "DVTKit.h"
 #import "IDEKit.h"
+#import "IDESourceEditor.h"
+
+
+@interface EditorContextContext : NSObject {
+    NSUInteger contextIdx;
+    IDEEditorMultipleContext* multipleContext;
+    IDEWorkspaceWindow* window;
+}
+@end
 
 @implementation XVimSourceView(Xcode)
 @dynamic selectedLineRange;
+
+@dynamic xview;
+@dynamic sourceCodeEditor;
+@dynamic editorContext;
+@dynamic editorMultipleContext;
+@dynamic window;
+@dynamic windowController;
 
 - (DVTSourceTextView*)xview
 {
@@ -21,6 +37,26 @@
 - (DVTFoldingTextStorage*)xTextStorage
 {
 	return (DVTFoldingTextStorage*)[[self xview] textStorage];
+}
+-(IDESourceCodeEditor*)sourceCodeEditor
+{
+    return (IDESourceCodeEditor*)[[self xview] delegate];
+}
+-(IDEEditorContext*)editorContext
+{
+    return self.sourceCodeEditor.editorContext;
+}
+-(IDEEditorMultipleContext*)editorMultipleContext
+{
+    return self.editorContext.multipleContext;
+}
+-(IDEWorkspaceWindow*)window
+{
+    return (IDEWorkspaceWindow*)[self.xview window];
+}
+-(IDEWorkspaceWindowController*)windowController
+{
+    return (IDEWorkspaceWindowController*)[self.window windowController];
 }
 
 - (NSUInteger)columnNumber:(NSUInteger)index
@@ -112,4 +148,24 @@
 {
     return [(NSDocument*)((IDEEditor*)[[ self xview] delegate]).document fileURL];
 }
+-(void)splitEditor:(BOOL)vertical
+{
+    [ self.editorContext openInAdjacentEditorWithAlternate:self ];
+}
+
+-(void)jumpToAlternateFile
+{
+    [ NSApp sendAction:@selector(jumpToNextCounterpart:) to:nil from:self.view];
+}
+
+-(void)closeOtherEditors
+{
+    [self.editorMultipleContext closeAllEditorContextsKeeping:self.editorContext];
+}
+
+-(void)takeFocus
+{
+    [self.window makeFirstResponder:self.view ];
+}
+
 @end
