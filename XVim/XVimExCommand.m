@@ -55,6 +55,10 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
         // You can change the method name as needed ( Since Vim's one is not always suitable )
         
         _excommands = [[NSArray alloc] initWithObjects:
+                       ///////////// CUSTOM VIM EX COMMANDS ///////////
+                       CMD(@"clean", @"clean:inWindow:"),
+                       ///////////// STANDARD VIM EX COMMANDS ///////////
+                       
                        CMD(@"A", @"switchToAlternate:inWindow:"),
                        CMD(@"append", @"append:inWindow:"),
                        CMD(@"abbreviate", @"abbreviate:inWindow:"),
@@ -980,9 +984,7 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 }
 - (void)make:(XVimExArg*)args inWindow:(XVimWindow*)window
 {
-    NSWindow *activeWindow = [[NSApplication sharedApplication] mainWindow];
-    NSEvent *keyPress = [NSEvent keyEventWithType:NSKeyDown location:[NSEvent mouseLocation] modifierFlags:NSCommandKeyMask timestamp:[[NSDate date] timeIntervalSince1970] windowNumber:[activeWindow windowNumber] context:[NSGraphicsContext graphicsContextWithWindow:activeWindow] characters:@"b" charactersIgnoringModifiers:@"b" isARepeat:NO keyCode:1];
-    [[NSApplication sharedApplication] sendEvent:keyPress];
+    [ NSApp sendAction:@selector(buildActiveRunContext:) to:nil from:self ];
 }
 - (void)mapMode:(int)mode withArgs:(XVimExArg*)args inWindow:(XVimWindow*)window
 {
