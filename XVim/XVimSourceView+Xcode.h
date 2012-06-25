@@ -69,4 +69,7 @@
 -(void)jumpToAlternateFile;
 -(void)closeOtherEditors;
 -(void)takeFocus;
+
+-(void)jumpToSymbol;
+
 @end
