@@ -268,6 +268,19 @@
     [commandLine errorMessage:@""];
 }
 
+- (void)showQuickfixWithString:(NSString *)message {
+	XVimCommandLine *commandLine = self.commandLine;
+    [commandLine quickFixWithString:message];
+    return;
+}
+
+- (void)closeQuickfix
+{
+	XVimCommandLine *commandLine = self.commandLine;
+    [commandLine quickFixWithString:nil ];
+}
+
+
 // TODO:
 // This method is highly dependent on Xcode class.
 // Must be moved or depend on abstraction layer's method.
