@@ -23,7 +23,10 @@
 @implementation XVimExArg
 @synthesize arg,cmd,forceit,noRangeSpecified,lineBegin,lineEnd,addr_count;
 @end
+@interface XVimExCommand()
+-(void)_expandTokens:(XVimExArg*) arg contextDict:(NSDictionary*)ctx;
 
+@end
 // Maximum time in seconds for a 'bang' command to run before being killed as taking too long
 static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 
@@ -939,6 +942,11 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
         DEBUG_LOG(@"Selected line range = %@", NSStringFromRange(window.sourceView.selectedLineRange));
     }
 
+    NSDictionary* contextForExCmd = [ NSDictionary dictionaryWithObjectsAndKeys:
+                                     @"BLAHHASH", @"#"
+                                     , [[ window.sourceView documentURL ] path], @"%"
+                                     , nil];
+    [ self _expandTokens:args contextDict:contextForExCmd];
     NSString* scriptReturn = [ XVimTaskRunner runScript:args.arg withInput:selectedText withTimeout:EXTERNAL_COMMAND_TIMEOUT_SECS ];
 
     if (scriptReturn != nil)
@@ -1091,5 +1099,45 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
     SEL sel = NSSelectorFromString([[args arg] stringByAppendingString:@":"]);
     [window setForcusBackToSourceView];
     [NSApp sendAction:sel  to:nil from:self];
+}
+
+-(void)_expandTokens:(XVimExArg *)arg contextDict:(NSDictionary *)ctx
+{
+    NSError*error=nil;
+    NSRegularExpression* regex = [ NSRegularExpression regularExpressionWithPattern:@"(%|#)(:p|:~|:h|:\\.)?"
+                                                                            options:0
+                                                                              error:&error];
+    NSMutableString* resultStr = [ NSMutableString string ];
+    __block NSRange remainderRange = NSMakeRange(0, [arg.arg length]);
+    [ regex enumerateMatchesInString:arg.arg
+                             options:NSMatchingReportCompletion
+                               range:remainderRange
+                          usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
+                              
+                              if ( result == nil)
+                              {
+                                  [ resultStr appendString:[ arg.arg substringWithRange:remainderRange ]];
+                              }
+                              else
+                              {
+                                  // % or #
+                                  NSString* matchedToken = [arg.arg substringWithRange:[ result rangeAtIndex:1 ]];
+                                  NSString* substituteValue = [ ctx objectForKey:matchedToken ];
+                                  if (!substituteValue)
+                                  {
+                                      substituteValue = matchedToken;
+                                  }
+                                  
+                                  NSUInteger matchStart = [ result range ].location;
+                                  NSUInteger matchLen = [ result range ].length;
+                                  NSRange firstHalfRange = NSMakeRange(remainderRange.location, matchStart-remainderRange.location);
+                                  [ resultStr appendFormat:@"%@%@", [arg.arg substringWithRange:firstHalfRange],substituteValue];
+                                  remainderRange.location = matchStart + matchLen ;
+                                  remainderRange.length = [arg.arg length] - remainderRange.location ;
+                              }
+     
+
+    }];
+    arg.arg = resultStr;
 }
 @end
