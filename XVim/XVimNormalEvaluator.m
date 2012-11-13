@@ -827,6 +827,13 @@ static NSArray *_invalidRepeatKeys;
 	return [self x:window];
 }
 
+-(XVimEvaluator*)Pageup:(XVimWindow*)window{
+    return [self C_b:(XVimWindow*)window];
+}
+
+-(XVimEvaluator*)Pagedown:(XVimWindow*)window{
+    return [self C_f:(XVimWindow*)window];
+}
 - (XVimEvaluator*)S_C_A:(XVimWindow*)window
 {
 	[[window sourceView] jumpToAlternateFile];

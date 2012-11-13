@@ -447,6 +447,7 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
                        CMD(@"snoremenu", @"menu:inWindow:"),
                        CMD(@"source", @"source:inWindow:"),
                        CMD(@"sort", @"sort:inWindow:"),
+                       CMD(@"sort!", @"sort:inWindow:"),
                        CMD(@"split", @"splitview:inWindow:"),
                        CMD(@"spellgood", @"spell:inWindow:"),
                        CMD(@"spelldump", @"spelldump:inWindow:"),
@@ -1030,11 +1031,13 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 		
 		[subStrings addObject:string];
 	}
-		
-	if (subStrings.count == 2)
+  
+	if (subStrings.count >= 2)
 	{
 		NSString *fromString = [subStrings objectAtIndex:0];
-		NSString *toString = [subStrings objectAtIndex:1];
+    
+    [subStrings removeObjectAtIndex:0];
+		NSString *toString = [subStrings componentsJoinedByString:@" "]; // get all args seperate by space
 		
 		NSMutableArray *fromKeyStrokes = [[NSMutableArray alloc] init];
 		[XVimKeyStroke fromString:fromString to:fromKeyStrokes];
@@ -1151,6 +1154,36 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
     [window setForcusBackToSourceView];
     [NSApp sendAction:sel  to:nil from:self];
 }
+
+- (void)sort:(XVimExArg *)args inWindow:(XVimWindow *)window
+{
+    XVimSourceView *view = [window sourceView];
+	NSRange range = NSMakeRange([args lineBegin], [args lineEnd] - [args lineBegin] + 1);
+    
+    NSString *cmdString = [[args cmd] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    NSString *argsString = [args arg];
+    XVimSortOptions options = 0;
+    
+    if ([cmdString characterAtIndex:[cmdString length] - 1] == '!') {
+        options |= XVimSortOptionReversed;
+    }
+    
+    if (argsString) {
+        #define STR_CONTAINS_ARG(str, arg) ([str rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:arg]].location != NSNotFound)
+        if (STR_CONTAINS_ARG(argsString, @"n")) {
+            options |= XVimSortOptionNumericSort;
+        }
+        if (STR_CONTAINS_ARG(argsString, @"i")) {
+            options |= XVimSortOptionIgnoreCase;
+        }
+        if (STR_CONTAINS_ARG(argsString, @"u")) {
+            options |= XVimSortOptionRemoveDuplicateLines;
+        }
+    }
+    
+    [view sortLinesInRange:range withOptions:options];
+}
+
 
 // Really rubbish way of getting the alt filename
 -(NSString*)_altFilename:(NSString *)filename
