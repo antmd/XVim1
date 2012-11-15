@@ -36,6 +36,7 @@ typedef bool (^XvimDecider)(id obj) ;
 @property (weak) IDEWorkspaceWindow* workspaceWindow ;
 @property (weak) IDEEditorContext* activeContext;
 @property (weak) NSArray* editorContexts;
+@property (weak) DVTTextDocumentLocation* currentLocation ;
 @property (assign) XvimEditorMode editorMode ;
 @property (assign) XvimAssistantLayoutMode assistantEditorsLayoutMode;
 @end
@@ -48,6 +49,7 @@ typedef bool (^XvimDecider)(id obj) ;
 @dynamic workspaceWindow;
 @dynamic activeContext;
 @dynamic editorContexts;
+@dynamic currentLocation;
 @dynamic editorMode;
 @dynamic assistantEditorsLayoutMode ;
 
@@ -98,6 +100,27 @@ static DirectionDecisions
     return contexts;
 }
 
+
+-(DVTTextDocumentLocation*)currentLocation
+{
+    IDEEditor *editor = [self.activeContext editor];
+    NSArray* currentLocations = [ editor currentSelectedDocumentLocations ];
+    DVTTextDocumentLocation* currentLocation = nil;
+    if (currentLocations && [ currentLocations count ] > 0)
+    {
+        currentLocation = [ currentLocations objectAtIndex:0 ];
+    }
+    return currentLocation;
+}
+-(void)setCurrentLocation:(DVTTextDocumentLocation *)currentLocation
+{
+    if (currentLocation)
+    {
+        IDEDocumentController* docController = [ NSDocumentController sharedDocumentController ];
+        [ docController openDocumentLocation:currentLocation error:nil ];
+    }
+}
+
 + (void)createWithEditor:(IDESourceCodeEditor*)editor
 {
     XVimWindowManager *instance = [[self alloc] initWithEditor:editor ];
@@ -121,14 +144,9 @@ static DirectionDecisions
 - (void)addEditorWindow
 {
     IDESourceCodeEditor *editor = _editor;
-    NSArray* currentLocations = [ editor currentSelectedDocumentLocations ];
-    DVTTextDocumentLocation* currentLocation = nil;
-    IDEEditorContext* currentContext = self.activeContext;
-    if (currentLocations && [ currentLocations count ] > 0)
-    {
-        currentLocation = [ currentLocations objectAtIndex:0 ];
-    }
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
+    DVTTextDocumentLocation* currentLocation = self.currentLocation;
+    
     if (self.editorMode != XVIM_EDITOR_MODE_GENIUS){
         [workspaceTabController changeToGeniusEditor:self];
     }else {
@@ -139,9 +157,9 @@ static DirectionDecisions
     // (this exits 'assistant mode', and enters 'manual mode')
     if (currentLocation)
     {
+        IDEEditorContext* currentContext = self.activeContext;
         [[ self.editorContexts lastObject ] takeFocus ]; // Focus on just-opened editor
-        IDEDocumentController* docController = [ NSDocumentController sharedDocumentController ];
-        [ docController openDocumentLocation:currentLocation error:nil ];
+        self.currentLocation = currentLocation;
         [ currentContext takeFocus ]; // Return focus to the original editor
     }
     
@@ -181,16 +199,18 @@ static DirectionDecisions
     IDESourceCodeEditor *editor = _editor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDEEditorArea *editorArea = [workspaceTabController editorArea];
-    if ([editorArea editorMode] != 1){
+    DVTTextDocumentLocation* currentLocation = nil;
+    
+    if ([editorArea editorMode] != XVIM_EDITOR_MODE_GENIUS){
         [workspaceTabController changeToGeniusEditor:self];
     }
-
-    IDEEditorGeniusMode *geniusMode = (IDEEditorGeniusMode*)[editorArea editorModeViewController];
-    IDEEditorMultipleContext *multipleContext = [geniusMode alternateEditorMultipleContext];
-    if ([multipleContext canCloseEditorContexts]){
-        [multipleContext closeAllEditorContextsKeeping:[multipleContext selectedEditorContext]];
+    if (!self.activeContext.isPrimaryEditorContext)
+    {
+        currentLocation = self.currentLocation;
     }
     [ workspaceTabController changeToStandardEditor:self];
+    self.currentLocation = currentLocation;
+    
 }
 
 - (void)setHorizontal
