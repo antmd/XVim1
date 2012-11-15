@@ -914,7 +914,7 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 
 - (void)quit:(XVimExArg*)args inWindow:(XVimWindow*)window
 { // :q
-    [NSApp sendAction:@selector(closeDocument:) to:nil from:self];
+    [ [XVimWindowManager instance] removeEditorWindow ];
 }
 
 /*

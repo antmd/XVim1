@@ -121,12 +121,30 @@ static DirectionDecisions
 - (void)addEditorWindow
 {
     IDESourceCodeEditor *editor = _editor;
+    NSArray* currentLocations = [ editor currentSelectedDocumentLocations ];
+    DVTTextDocumentLocation* currentLocation = nil;
+    IDEEditorContext* currentContext = self.activeContext;
+    if (currentLocations && [ currentLocations count ] > 0)
+    {
+        currentLocation = [ currentLocations objectAtIndex:0 ];
+    }
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     if (self.editorMode != XVIM_EDITOR_MODE_GENIUS){
         [workspaceTabController changeToGeniusEditor:self];
     }else {
         [workspaceTabController addAssistantEditor:self];
     }
+    // An assistant editor will always open showing a 'counterpart' file. To simulate the
+    // vim behaviour, we jump to to the same location as displayed in the current editor
+    // (this exits 'assistant mode', and enters 'manual mode')
+    if (currentLocation)
+    {
+        [[ self.editorContexts lastObject ] takeFocus ]; // Focus on just-opened editor
+        IDEDocumentController* docController = [ NSDocumentController sharedDocumentController ];
+        [ docController openDocumentLocation:currentLocation error:nil ];
+        [ currentContext takeFocus ]; // Return focus to the original editor
+    }
+    
 }
 
 - (void)addEditorWindowVertical
