@@ -82,10 +82,14 @@ static DirectionDecisions
 -(IDEWorkspaceWindow*) workspaceWindow { return (IDEWorkspaceWindow*)[self.editor.textView window]; }
 -(XvimEditorMode)editorMode { return (XvimEditorMode)self.editorArea.editorMode; }
 -(XvimAssistantLayoutMode)assistantEditorsLayoutMode { return (XvimAssistantLayoutMode)self.workspaceTabController.assistantEditorsLayout; }
+
+
 -(IDEEditorContext*)activeContext
 {
     return [(IDESourceCodeEditor*)[(DVTSourceTextView*)[ self.workspaceWindow firstResponder ] delegate ] editorContext ];
 }
+
+
 -(NSArray*)editorContexts
 {
     NSArray* contexts = nil;
@@ -103,15 +107,21 @@ static DirectionDecisions
 
 -(DVTTextDocumentLocation*)currentLocation
 {
-    IDEEditor *editor = [self.activeContext editor];
-    NSArray* currentLocations = [ editor currentSelectedDocumentLocations ];
-    DVTTextDocumentLocation* currentLocation = nil;
-    if (currentLocations && [ currentLocations count ] > 0)
+    DVTTextDocumentLocation* loc = nil;
+    if (self.editorMode == XVIM_EDITOR_MODE_GENIUS
+        || self.editorMode == XVIM_EDITOR_MODE_STANDARD)
     {
-        currentLocation = [ currentLocations objectAtIndex:0 ];
+        IDEEditor *editor = [self.activeContext editor];
+        NSArray* currentLocations = [ editor currentSelectedDocumentLocations ];
+        if (currentLocations && [ currentLocations count ] > 0)
+        {
+            loc = [ currentLocations objectAtIndex:0 ];
+        }
     }
-    return currentLocation;
+    return loc;
 }
+
+
 -(void)setCurrentLocation:(DVTTextDocumentLocation *)currentLocation
 {
     if (currentLocation)
@@ -198,19 +208,14 @@ static DirectionDecisions
 {
     IDESourceCodeEditor *editor = _editor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
-    IDEEditorArea *editorArea = [workspaceTabController editorArea];
-    DVTTextDocumentLocation* currentLocation = nil;
-    
-    if ([editorArea editorMode] != XVIM_EDITOR_MODE_GENIUS){
-        [workspaceTabController changeToGeniusEditor:self];
+    IDENavigableItem* currentLocation = self.activeContext.navigableItem;
+    if (self.editorMode != XVIM_EDITOR_MODE_STANDARD){
+        [workspaceTabController changeToStandardEditor:self ];
     }
-    if (!self.activeContext.isPrimaryEditorContext)
-    {
-        currentLocation = self.currentLocation;
-    }
-    [ workspaceTabController changeToStandardEditor:self];
-    self.currentLocation = currentLocation;
+    self.activeContext.navigableItem = currentLocation;
     
+    //[ self.editor performSelector:@selector(selectDocumentLocations:) withObject:[NSArray arrayWithObject:currentLocation] afterDelay:0 ];
+    //    [self.editor selectDocumentLocations:[NSArray arrayWithObject:currentLocation ]];
 }
 
 - (void)setHorizontal

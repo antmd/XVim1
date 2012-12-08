@@ -25,6 +25,8 @@
 @implementation XVimExArg
 @synthesize arg,cmd,forceit,noRangeSpecified,lineBegin,lineEnd,addr_count;
 @end
+
+
 @interface XVimExCommand()
 -(void)_expandSpecialExTokens:(XVimExArg*) arg contextDict:(NSDictionary*)ctx;
 -(NSString*)_altFilename:(NSString*)filename;
@@ -539,7 +541,7 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
                        CMD(@"vunmenu", @"menu:inWindow:"),
                        CMD(@"write", @"write:inWindow:"),
                        CMD(@"wNext", @"wnext:inWindow:"),
-                       CMD(@"wall", @"wqall:inWindow:"),
+                       CMD(@"wall", @"wall:inWindow:"),
                        CMD(@"while", @"while:inWindow:"),
                        CMD(@"winsize", @"winsize:inWindow:"),
                        CMD(@"wincmd", @"wincmd:inWindow:"),
@@ -1128,6 +1130,18 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 
 - (void)pissue:(XVimExArg*)args inWindow:(XVimWindow*)window{
     [NSApp sendAction:@selector(jumpToPreviousIssue:) to:nil from:self];
+}
+
+-(void)quit_all:(XVimExArg*)args inWindow:(XVimWindow*)window{
+    [NSApp sendAction:@selector(performCloseWorkspace:) to:nil from:self ];
+}
+
+-(void)wall:(XVimExArg*)args inWindow:(XVimWindow*)window {
+    [ NSApp sendAction:@selector(saveAllEditorDocuments:) to:nil from:self ];
+}
+-(void)wqall:(XVimExArg*)args inWindow:(XVimWindow*)window {
+    [ self wall:args inWindow:window ];
+    [ self quit_all:args inWindow:window ];
 }
 
 - (void)ncounterpart:(XVimExArg*)args inWindow:(XVimWindow*)window{
