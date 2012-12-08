@@ -8,6 +8,7 @@
 
 #import "XVimWindowManager.h"
 #import "IDESourceEditor.h"
+#import "Logger.h"
 
 #import "IDEKit.h"
 
@@ -155,22 +156,13 @@ static DirectionDecisions
 {
     IDESourceCodeEditor *editor = _editor;
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
-    DVTTextDocumentLocation* currentLocation = self.currentLocation;
+    IDENavigableItem* currentLocation = (self.editorMode==XVIM_EDITOR_MODE_STANDARD)?self.editor.editorContext.navigableItem: self.activeContext.navigableItem;
     
     if (self.editorMode != XVIM_EDITOR_MODE_GENIUS){
-        [workspaceTabController changeToGeniusEditor:self];
+        [ NSApp sendAction:@selector(openInAdjacentEditorWithAlternate:) to:nil from:self ];
     }else {
         [workspaceTabController addAssistantEditor:self];
-    }
-    // An assistant editor will always open showing a 'counterpart' file. To simulate the
-    // vim behaviour, we jump to to the same location as displayed in the current editor
-    // (this exits 'assistant mode', and enters 'manual mode')
-    if (currentLocation)
-    {
-        IDEEditorContext* currentContext = self.activeContext;
-        [[ self.editorContexts lastObject ] takeFocus ]; // Focus on just-opened editor
-        self.currentLocation = currentLocation;
-        [ currentContext takeFocus ]; // Return focus to the original editor
+        ((IDEEditorContext*)[ self.editorContexts lastObject ]).navigableItem =currentLocation; // Focus on just-opened editor
     }
     
 }
@@ -206,16 +198,16 @@ static DirectionDecisions
 
 - (void)closeAllButActive 
 {
-    IDESourceCodeEditor *editor = _editor;
-    IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
-    IDENavigableItem* currentLocation = self.activeContext.navigableItem;
-    if (self.editorMode != XVIM_EDITOR_MODE_STANDARD){
-        [workspaceTabController changeToStandardEditor:self ];
+    DVTTextDocumentLocation* currentLocation = self.currentLocation;
+    if (self.editorMode == XVIM_EDITOR_MODE_GENIUS)
+    {
+        while ([[self.editorModeViewController editorContexts] count ] > 2) {
+            [ self.editorModeViewController removeAssistantEditor ];
+        }
+        [ NSApp sendAction:@selector(changeToStandardEditor:) to:nil from:self];
     }
-    self.activeContext.navigableItem = currentLocation;
     
-    //[ self.editor performSelector:@selector(selectDocumentLocations:) withObject:[NSArray arrayWithObject:currentLocation] afterDelay:0 ];
-    //    [self.editor selectDocumentLocations:[NSArray arrayWithObject:currentLocation ]];
+self.currentLocation = currentLocation;
 }
 
 - (void)setHorizontal
