@@ -44,6 +44,8 @@ typedef enum {
 -(void)changeToIssuesNavigator;
 -(void)selectNextIssue;
 -(void)selectPreviousIssue;
+-(void)setGlobalMark:(NSString*)markName;
+-(void)jumpToGlobalMark:(NSString*)markName;
 @end
 
 #define XVIM_WINDOWMANAGER ([XVimWindowManager instance])

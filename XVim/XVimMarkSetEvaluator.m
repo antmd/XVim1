@@ -10,6 +10,7 @@
 #import "XVimKeymapProvider.h"
 #import "XVimKeyStroke.h"
 #import "XVimWindow.h"
+#import "XVimWindowManager.h"
 
 @implementation XVimMarkSetEvaluator
 
@@ -27,9 +28,15 @@
     if (! (((c>='a' && c<='z')) || ((c>='A' && c<='Z'))) ) {
         return [self defaultNextEvaluatorInWindow:window];
     }
-	NSRange r = [[window sourceView] selectedRange];
-	NSValue *v =[NSValue valueWithRange:r];
-	[[window getLocalMarks] setValue:v forKey:keyStr];
+    BOOL isGlobalMark = [[NSCharacterSet uppercaseLetterCharacterSet] characterIsMember:[keyStr characterAtIndex:0]];
+    if (isGlobalMark) {
+        [ XVIM_WINDOWMANAGER setGlobalMark:keyStr ];
+    }
+    else {
+        NSRange r = [[window sourceView] selectedRange];
+        NSValue *v =[NSValue valueWithRange:r];
+        [[window getLocalMarks] setValue:v forKey:keyStr];
+    }
     
     return [self defaultNextEvaluatorInWindow:window];
 }

@@ -40,6 +40,7 @@ typedef bool (^XvimDecider)(id obj) ;
 @property (weak) DVTTextDocumentLocation* currentLocation ;
 @property (assign) XvimEditorMode editorMode ;
 @property (assign) XvimAssistantLayoutMode assistantEditorsLayoutMode;
+@property (copy,nonatomic) IDENavigableItem* currentIDELocation;
 @end
 
 @implementation XVimWindowManager
@@ -53,6 +54,7 @@ typedef bool (^XvimDecider)(id obj) ;
 @dynamic currentLocation;
 @dynamic editorMode;
 @dynamic assistantEditorsLayoutMode ;
+@dynamic currentIDELocation;
 
 
 // 0 = horizontal, 1 = vertical
@@ -84,6 +86,30 @@ static DirectionDecisions
 -(XvimEditorMode)editorMode { return (XvimEditorMode)self.editorArea.editorMode; }
 -(XvimAssistantLayoutMode)assistantEditorsLayoutMode { return (XvimAssistantLayoutMode)self.workspaceTabController.assistantEditorsLayout; }
 
+static NSMutableDictionary* GlobalMarks = nil;
+
+-(NSMutableDictionary*)globalMarksDict
+{
+    if (GlobalMarks==nil) {
+        GlobalMarks = [[ NSMutableDictionary alloc ] init];
+    }
+    return GlobalMarks;
+}
+
+-(void)setGlobalMark:(NSString*)markName
+{
+    DVTTextDocumentLocation* loc = self.currentLocation;
+    if (loc!=nil) {
+        [[ self globalMarksDict] setObject:[[loc copy]autorelease] forKey:markName ];
+    }
+}
+-(void)jumpToGlobalMark:(NSString*)markName
+{
+    DVTTextDocumentLocation* loc = [[self globalMarksDict] objectForKey:markName];
+    if (loc != nil) {
+        self.currentLocation = loc;
+    }
+}
 
 -(IDEEditorContext*)activeContext
 {
@@ -105,6 +131,17 @@ static DirectionDecisions
     return contexts;
 }
 
+
+-(IDENavigableItem*)currentIDELocation
+{
+    IDENavigableItem* currentLocation = (self.editorMode==XVIM_EDITOR_MODE_STANDARD)?self.editor.editorContext.navigableItem: self.activeContext.navigableItem;
+    return currentLocation;
+}
+
+-(void)setCurrentIDELocation:(IDENavigableItem *)IDELocation
+{
+    self.activeContext.navigableItem = IDELocation;
+}
 
 -(DVTTextDocumentLocation*)currentLocation
 {

@@ -10,6 +10,7 @@
 #import "XVimKeymapProvider.h"
 #import "XVimKeyStroke.h"
 #import "XVimWindow.h"
+#import "XVimWindowManager.h"
 #import "XVimSourceView.h"
 #import "XVimSourceView+Vim.h"
 #import "XVim.h"
@@ -64,21 +65,28 @@
 - (XVimEvaluator*)eval:(XVimKeyStroke*)keyStroke inWindow:(XVimWindow*)window
 {
     NSString* keyStr = [keyStroke toString];
-	NSUInteger to = [[self class] markLocationForMark:keyStr inWindow:window];
-	if (to == NSNotFound)
-	{
-		return nil;
-	}
-	
-    NSUInteger from = [[window sourceView] selectedRange].location;
-	MOTION_TYPE motionType = CHARACTERWISE_EXCLUSIVE;
-	
-	if (_markOperator == MARKOPERATOR_MOVETOSTARTOFLINE) {
-		to = [[window sourceView] firstNonBlankInALine:to];
-		motionType = LINEWISE;
-	}
-	
-    return [[self motionEvaluator] _motionFixedFrom:from To:to Type:motionType inWindow:window];
+    BOOL isGlobalMark = [[NSCharacterSet uppercaseLetterCharacterSet] characterIsMember:[keyStr characterAtIndex:0]];
+    if (isGlobalMark) {
+        [ XVIM_WINDOWMANAGER jumpToGlobalMark:keyStr];
+        return nil;
+    }
+    else {
+        NSUInteger to = [[self class] markLocationForMark:keyStr inWindow:window];
+        if (to == NSNotFound)
+        {
+            return nil;
+        }
+        
+        NSUInteger from = [[window sourceView] selectedRange].location;
+        MOTION_TYPE motionType = CHARACTERWISE_EXCLUSIVE;
+        
+        if (_markOperator == MARKOPERATOR_MOVETOSTARTOFLINE) {
+            to = [[window sourceView] firstNonBlankInALine:to];
+            motionType = LINEWISE;
+        }
+        
+        return [[self motionEvaluator] _motionFixedFrom:from To:to Type:motionType inWindow:window];
+    }
 }
 
 @end
