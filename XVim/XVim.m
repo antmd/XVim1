@@ -38,6 +38,7 @@
 #import "XVimHistoryHandler.h"
 #import "XVimHookManager.h"
 #import "XVimCommandLine.h"
+#import "GlobalMarksViewController.h"
 
 static XVim* s_instance = nil;
 
@@ -212,6 +213,12 @@ static XVim* s_instance = nil;
 		}
 		[XVimKeyStroke initKeymaps];
         
+        // Put up marks window if global marks are added
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_globalMarksChanged:)
+                                                     name:@"XVimMarksChanged"
+                                                   object:nil ];
+        
 	}
 	return self;
 }
@@ -335,6 +342,41 @@ static XVim* s_instance = nil;
 	}
 
     return [[NSPasteboard generalPasteboard]stringForType:NSStringPboardType];
+}
+
+-(NSWindow*)_globalMarksWindow
+{
+    static NSWindow* marksWindow = nil;
+    if (marksWindow==nil) {
+        NSRect windowRect = NSMakeRect(130.0f, 30.0f, 300.0f, 200.0f);
+        
+        marksWindow = [[NSPanel alloc] initWithContentRect:windowRect
+                                                 styleMask:NSResizableWindowMask | NSHUDWindowMask | NSTitledWindowMask | NSUtilityWindowMask | NSClosableWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:YES];
+
+        [ marksWindow setTitle:@"XVim Global Marks"];
+        [ marksWindow setLevel:NSFloatingWindowLevel ];
+        GlobalMarksViewController* vc=[GlobalMarksViewController instance];
+        [ vc.view setFrame:[marksWindow contentRectForFrameRect:windowRect]];
+        [marksWindow setContentView:vc.view];
+        NSLog(@"Marks Window View = %p, frame = %@", vc.view, NSStringFromRect([vc.view frame]));
+    }
+    return marksWindow;
+}
+-(void)_globalMarksChanged:(NSNotification*)note {
+    NSArray* gmarks = [[ note userInfo ] objectForKey:@"marks"];
+    if (gmarks!=nil && [gmarks count]>0) {
+        if (![[self _globalMarksWindow] isVisible])
+        {
+            [[self _globalMarksWindow] orderFront:self];
+        }
+        GlobalMarksViewController* vc=[GlobalMarksViewController instance];
+        vc.globalMarks = gmarks;
+    }
+    else {
+        [[self _globalMarksWindow] orderOut:self];
+    }
 }
 
 @end

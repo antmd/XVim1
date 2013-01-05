@@ -22,7 +22,7 @@ static const char* KEY_COMMAND_LINE = "commandLine";
     NSView* layoutView = [self textViewArea];
     // Check if we already have command line in the _editorAreaAutoLayoutView.
     if( nil == [self commandLine] ){
-        XVimCommandLine *cmd = [[[XVimCommandLine alloc] init] autorelease];
+        XVimCommandLine *cmd = [[[XVimCommandLine alloc] initWithEditorArea:self ] autorelease];
         objc_setAssociatedObject( self, (void*)KEY_COMMAND_LINE, cmd, OBJC_ASSOCIATION_RETAIN);
         [layoutView addSubview:cmd];
         

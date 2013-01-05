@@ -7,12 +7,14 @@
 //
 
 #import "DVTKit.h"      
+#import "IDEEditorArea+XVim.h"
 #import "Logger.h"      
 #import "NSAttributedString+Geometrics.h"     
 #import "XVimCommandField.h"    
 #import "XVimCommandLine.h"     
 #import "XVimQuickFixView.h"    
 #import "XVimWindow.h"  
+#import "XVimWindowManager.h"
 #import <objc/runtime.h>        
 
 #define DEFAULT_COMMAND_FIELD_HEIGHT 18.0
@@ -27,16 +29,18 @@
     XVimQuickFixView* _quickFixScrollView;
     id _quickFixObservation;
     NSTimer* _errorTimer;
+    IDEEditorArea* _editorArea;
 }
 - (void)layoutCmdline:(NSView*)view;
 @end
 
 @implementation XVimCommandLine
 
-- (id)init
+- (id)initWithEditorArea:(IDEEditorArea*)editorArea
 {
     self = [super initWithFrame:NSMakeRect(0, 0, 100, DEFAULT_COMMAND_FIELD_HEIGHT)];
     if (self) {
+        _editorArea = editorArea;
         [self setBoundsOrigin:NSMakePoint(0,0)];
 
         // Static Message ( This is behind the command view if the command is active)
@@ -91,6 +95,10 @@
 
 - (void)dealloc{
     [[ NSNotificationCenter defaultCenter ] removeObserver:_quickFixObservation];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                name:NSWindowDidBecomeKeyNotification
+                                                  object:nil];
+
     [_command release];
     [_static release];
     [_error release];
@@ -255,6 +263,27 @@ static NSString* QuickFixPrompt = @"Press a key to continue...";
     }
 }
 
+-(void)_didBecomeKey:(id)sender {
+    IDEEditor* editor = [[_editorArea primaryEditorContext] editor];
+    if ([editor isKindOfClass:NSClassFromString(@"IDESourceCodeEditor")]) {
+        XVIM_WINDOWMANAGER.editor = (IDESourceCodeEditor*)[[_editorArea primaryEditorContext] editor];
+        TRACE_LOG(@"New key editor = %@", editor);
+    }
+}
+
+-(void)viewDidMoveToWindow
+{
+    if ([self window]!=nil)
+    {
+        [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                        name:NSWindowDidBecomeKeyNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_didBecomeKey:) name:NSWindowDidBecomeKeyNotification object:[self window]];
+        if ([[self window]isKeyWindow]) {
+            [ self _didBecomeKey:self ];
+        }
+        
+    }
+}
 - (void)didFrameChanged:(NSNotification*)notification
 {
     [self layoutCmdline:[notification object]];

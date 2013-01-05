@@ -9,9 +9,11 @@
 #import <AppKit/AppKit.h>
 #import "XVimCommandField.h"
 
+@class IDEEditorArea;
+
 @interface XVimCommandLine : NSView
 
-- (id)init;
+- (id)initWithEditorArea:(IDEEditorArea*)editorArea;
 - (void)setModeString:(NSString*)string;
 - (void)setArgumentString:(NSString*)string;
 - (void)errorMessage:(NSString*)string;

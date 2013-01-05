@@ -8,6 +8,7 @@
 
 #import "XVimWindowManager.h"
 #import "IDESourceEditor.h"
+#import "XVimGlobalMark.h"
 #import "Logger.h"
 
 #import "IDEKit.h"
@@ -30,7 +31,6 @@ typedef bool (^XvimDecider)(id obj) ;
 }
 - (void)setHorizontal;
 - (void)setVertical;
-@property (weak) IDESourceCodeEditor *editor ;
 @property (weak) IDEWorkspaceTabController *workspaceTabController ;
 @property (weak) IDEEditorArea *editorArea;
 @property (weak) IDEEditorModeViewController* editorModeViewController ;
@@ -42,6 +42,8 @@ typedef bool (^XvimDecider)(id obj) ;
 @property (assign) XvimAssistantLayoutMode assistantEditorsLayoutMode;
 @property (copy,nonatomic) IDENavigableItem* currentIDELocation;
 @end
+
+
 
 @implementation XVimWindowManager
 @synthesize  editor = _editor;
@@ -96,11 +98,31 @@ static NSMutableDictionary* GlobalMarks = nil;
     return GlobalMarks;
 }
 
+-(void)_notifyGlobalMarksChanged
+{
+    NSMutableArray* marks = [ NSMutableArray array ];
+    for (NSString* key in [self globalMarksDict]) {
+        DVTTextDocumentLocation* loc = [[self globalMarksDict] objectForKey:key];
+        NSString* locdesc = [ NSString stringWithFormat:@"Line: %llu", loc.startingLineNumber];
+        XVimGlobalMark* gmark = [ XVimGlobalMark globalMark:key
+                                                   withURL:[ loc documentURL]
+                                               withLocation:locdesc];
+        [ marks addObject:gmark];
+    }
+    NSDictionary* userInfoDict = [ NSDictionary dictionaryWithObject:marks
+                                                              forKey:@"marks"];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"XVimMarksChanged"
+                                                        object:self
+                                                      userInfo:userInfoDict ];
+}
+
+
 -(void)setGlobalMark:(NSString*)markName
 {
     DVTTextDocumentLocation* loc = self.currentLocation;
     if (loc!=nil) {
         [[ self globalMarksDict] setObject:[[loc copy]autorelease] forKey:markName ];
+        [ self _notifyGlobalMarksChanged ];
     }
 }
 -(void)jumpToGlobalMark:(NSString*)markName
