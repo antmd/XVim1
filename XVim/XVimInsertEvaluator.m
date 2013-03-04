@@ -24,6 +24,7 @@
 @property (nonatomic, strong) NSString *lastInsertedText;
 @property (nonatomic, readonly, strong) NSArray *cancelKeys;
 @property (nonatomic, readonly, strong) NSArray *movementKeys;
+@property (nonatomic) BOOL enoughBufferForReplace;
 @end
 
 @implementation XVimInsertEvaluator
@@ -33,7 +34,7 @@
 @synthesize movementKeys = _movementKeys;
 @synthesize lastInsertedText = _lastInsertedText;
 @synthesize movementKeyPressed = _movementKeyPressed;
-
+@synthesize enoughBufferForReplace = _enoughBufferForReplace;
 
 
 - (id)initWithContext:(XVimEvaluatorContext*)context
@@ -46,16 +47,17 @@
 {
     self = [super initWithContext:context];
     if (self) {
-        _lastInsertedText = @"";
+        _lastInsertedText = [@"" retain];
         _oneCharMode = oneCharMode;
         _movementKeyPressed = NO;
         _insertedEventsAbort = NO;
-        _cancelKeys = [NSArray arrayWithObjects:
+        _enoughBufferForReplace = YES;
+        _cancelKeys = [[NSArray alloc] initWithObjects:
                        [NSValue valueWithPointer:@selector(ESC:)],
                        [NSValue valueWithPointer:@selector(C_LSQUAREBRACKET:)],
                        [NSValue valueWithPointer:@selector(C_c:)],
                        nil];
-        _movementKeys = [NSArray arrayWithObjects:
+        _movementKeys = [[NSArray alloc] initWithObjects:
                          [NSValue valueWithPointer:@selector(Up:)],
                          [NSValue valueWithPointer:@selector(Down:)],
                          [NSValue valueWithPointer:@selector(Left:)],
@@ -63,6 +65,14 @@
                          nil];
     }
     return self;
+}
+
+- (void)dealloc
+{
+    [_lastInsertedText release];
+    [_cancelKeys release];
+    [_movementKeys release];
+    [super dealloc];
 }
 
 - (NSString*)modeString
@@ -78,9 +88,9 @@
 - (XVimEvaluator*)handleMouseEvent:(NSEvent*)event inWindow:(XVimWindow*)window
 {
 	NSRange range = [[window sourceView] selectedRange];
-	return range.length == 0 ? self : [[XVimVisualEvaluator alloc] initWithContext:[[XVimEvaluatorContext alloc] init]
+	return range.length == 0 ? self : [[[XVimVisualEvaluator alloc] initWithContext:[[XVimEvaluatorContext alloc] init]
 																			  mode:MODE_CHARACTER
-                                                                         withRange:range];
+                                                                         withRange:range] autorelease];
 }
 
 // Move to insert mode, have it call insertion point on sourceView
@@ -164,7 +174,7 @@
 	[super willEndHandlerInWindow:window];
 	XVimSourceView *sourceView = [window sourceView];
 	
-    if( !_insertedEventsAbort ){
+    if( !_insertedEventsAbort && !_oneCharMode ){
         NSString *text = [self getInsertedTextInWindow:window];
         for( int i = 0 ; i < [self numericArg]-1; i++ ){
             [sourceView insertText:text];
@@ -173,7 +183,9 @@
     
     // Store off any needed text
     XVim *xvim = [XVim instance];
-    if (!self.movementKeyPressed){
+    if( _oneCharMode ){
+
+    }else if (!self.movementKeyPressed){
         [self recordTextIntoRegister:xvim.recordingRegister inWindow:window];
         [self recordTextIntoRegister:xvim.repeatRegister inWindow:window];
     }else if(self.lastInsertedText.length > 0){
@@ -199,6 +211,12 @@
 	[[window sourceView] adjustCursorPosition];
 }
 
+- (BOOL)windowShouldReceive:(SEL)keySelector {
+  BOOL b = YES ^ ([NSStringFromSelector(keySelector) isEqualToString:@"C_e:"] ||
+                  [NSStringFromSelector(keySelector) isEqualToString:@"C_y:"]);
+  return b;
+}
+
 - (XVimEvaluator*)eval:(XVimKeyStroke*)keyStroke inWindow:(XVimWindow*)window{
     XVimEvaluator *nextEvaluator = self;
     SEL keySelector = [keyStroke selectorForInstance:self];
@@ -214,29 +232,39 @@
     
     if (nextEvaluator != nil){
         NSEvent *event = [keyStroke toEvent];
-        if (_oneCharMode == TRUE) {
-            NSRange save = [[window sourceView] selectedRange];
-            for (NSUInteger i = 0; i < [self numericArg]; ++i) {
-                [[window sourceView] deleteForward];
-                [[window sourceView] keyDown:event];
-                
-                save.location += 1;
+        if (_oneCharMode) {
+            // check buffer limit
+            XVimSourceView *view = [window sourceView];
+            NSUInteger loc = [view selectedRange].location;
+            if( [[view string] length] < loc + [self numericArg] ){
+                _enoughBufferForReplace = FALSE;
+            } else {
+                // r command effect is in one line.
+                for( NSUInteger i = loc; i <= loc + [self numericArg]-1; ++i ){
+                    unichar uc = [[view string] characterAtIndex:i];
+                    if( [[NSCharacterSet newlineCharacterSet] characterIsMember:uc] ){
+                        _enoughBufferForReplace = FALSE;
+                    }
+                }
+            }
+            if( _enoughBufferForReplace ){
+                NSRange save = [[window sourceView] selectedRange];
+                for (NSUInteger i = 0; i < [self numericArg]; ++i) {
+                    [[window sourceView] deleteForward];
+                    [[window sourceView] keyDown:event];
+                    
+                    save.location += 1;
+                    [[window sourceView] setSelectedRange:save];
+                }
+                save.location -= 1;
                 [[window sourceView] setSelectedRange:save];
             }
-            save.location -= 1;
-            [[window sourceView] setSelectedRange:save];
             nextEvaluator = nil;
         } else if ([self windowShouldReceive:keySelector]) {
             [[window sourceView] keyDown:event];
         }
     }
     return nextEvaluator;
-}
-
-- (BOOL)windowShouldReceive:(SEL)keySelector {
-    BOOL b = YES ^ ([NSStringFromSelector(keySelector) isEqualToString:@"C_e:"] ||
-                    [NSStringFromSelector(keySelector) isEqualToString:@"C_y:"]);
-    return b;
 }
 
 - (XVimEvaluator*)ESC:(XVimWindow*)window{
@@ -271,6 +299,24 @@
     return self;
 }
 
+- (void)C_yC_eHelper:(XVimWindow *)window forC_y:(BOOL)handlingC_y {
+  NSUInteger currentCursorIndex = [[window sourceView] selectedRange].location;
+  NSUInteger currentColumnIndex = [[window sourceView] columnNumber:currentCursorIndex];
+  NSUInteger newCharIndex;
+  if (handlingC_y) {
+    newCharIndex = [[window sourceView] prevLine:currentCursorIndex column:currentColumnIndex count:[self numericArg] option:MOTION_OPTION_NONE];
+  } else {
+    newCharIndex = [[window sourceView] nextLine:currentCursorIndex column:currentColumnIndex count:[self numericArg] option:MOTION_OPTION_NONE];
+  }
+  NSUInteger newColumnIndex = [[window sourceView] columnNumber:newCharIndex];
+  NSLog(@"Old column: %ld\tNew column: %ld", currentColumnIndex, newColumnIndex);
+  if (currentColumnIndex == newColumnIndex) {
+    unichar u = [[[window sourceView] string] characterAtIndex:newCharIndex];
+    NSString *charToInsert = [NSString stringWithFormat:@"%c", u];
+    [[window sourceView] insertText:charToInsert];
+  }
+}
+
 - (XVimEvaluator*)C_y:(XVimWindow*)window{
     [self C_yC_eHelper:window forC_y:YES];
     return self;
@@ -288,26 +334,9 @@
 	XVimDeleteAction *action = [[XVimDeleteAction alloc] initWithYankRegister: nil
 														 insertModeAtCompletion:FALSE];
     [action motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    [action release];
     
     return self;
-}
-    
-- (void)C_yC_eHelper:(XVimWindow *)window forC_y:(BOOL)handlingC_y {
-    NSUInteger currentCursorIndex = [[window sourceView] selectedRange].location;
-    NSUInteger currentColumnIndex = [[window sourceView] columnNumber:currentCursorIndex];
-    NSUInteger newCharIndex;
-    if (handlingC_y) {
-        newCharIndex = [[window sourceView] prevLine:currentCursorIndex column:currentColumnIndex count:[self numericArg] option:MOTION_OPTION_NONE];
-    } else {
-        newCharIndex = [[window sourceView] nextLine:currentCursorIndex column:currentColumnIndex count:[self numericArg] option:MOTION_OPTION_NONE];
-    }
-    NSUInteger newColumnIndex = [[window sourceView] columnNumber:newCharIndex];
-    NSLog(@"Old column: %ld\tNew column: %ld", currentColumnIndex, newColumnIndex);
-    if (currentColumnIndex == newColumnIndex) {
-        unichar u = [[[window sourceView] string] characterAtIndex:newCharIndex];
-        NSString *charToInsert = [NSString stringWithFormat:@"%c", u];
-        [[window sourceView] insertText:charToInsert];
-    }
 }
 
 - (XVimRegisterOperation)shouldRecordEvent:(XVimKeyStroke*)keyStroke inRegister:(XVimRegister*)xregister{

@@ -12,7 +12,7 @@
 #import "Hooker.h"
 #import "Logger.h"
 #import "XVimStatusLine.h"
-#import "XVimWindowManager.h"
+#import "XVim.h"
 
 @implementation IDESourceCodeEditorHook
 
@@ -23,25 +23,10 @@
 			   ofClass:delegate 
 			withMethod:class_getInstanceMethod([self class], @selector(textView:willChangeSelectionFromCharacterRanges:toCharacterRanges:)) 
    keepingOriginalWith:@selector(textView_:willChangeSelectionFromCharacterRanges:toCharacterRanges:)];
-    
-	[Hooker hookMethod:@selector(didSetupEditor)
-			   ofClass:delegate 
-			withMethod:class_getInstanceMethod([self class], @selector(didSetupEditor))
-   keepingOriginalWith:@selector(didSetupEditor2_)];
 }
 
 - (NSArray*) textView:(NSTextView *)textView willChangeSelectionFromCharacterRanges:(NSArray *)oldSelectedCharRanges toCharacterRanges:(NSArray *)newSelectedCharRanges
 {
     return newSelectedCharRanges;
 }
-
-- (void)didSetupEditor
-{
-	IDESourceCodeEditor *editor = (IDESourceCodeEditor*)self;
-    [editor didSetupEditor2_];
-    if (editor.isPrimaryEditor) {
-        [XVimWindowManager createWithEditor:editor];
-    }
-}
-
 @end

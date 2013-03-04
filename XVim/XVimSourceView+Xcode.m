@@ -10,7 +10,6 @@
 #import "DVTSourceTextViewHook.h"
 #import "DVTKit.h"
 #import "IDEKit.h"
-#import "IDESourceEditor.h"
 
 
 @interface EditorContextContext : NSObject {
@@ -144,9 +143,14 @@
 }
 
 
--(NSURL*)documentURL
+- (IDEEditor*)editor
 {
-    return [(NSDocument*)((IDEEditor*)[[ self xview] delegate]).document fileURL];
+    return (IDEEditor*)[[self xview] delegate];
+}
+
+- (NSURL*)documentURL
+{
+    return [(NSDocument*)[self editor].document fileURL];
 }
 -(void)splitEditor:(BOOL)vertical
 {

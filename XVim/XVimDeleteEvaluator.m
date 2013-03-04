@@ -28,13 +28,36 @@
 {
 	if (self = [super initWithContext:context
 					   operatorAction:operatorAction 
-								  withParent:parent
+                           withParent:parent
 				])
 	{
 		self->_insertModeAtCompletion = insertModeAtCompletion;
 	}
 	return self;
 }
+
+- (XVimEvaluator*)b:(XVimWindow*)window{
+    if( _insertModeAtCompletion ){
+        // cb is special case of word motion
+        NSUInteger to = [[window sourceView] selectedRange].location;
+        NSUInteger from = [[window sourceView] wordsBackward:to count:[self numericArg] option:MOTION_OPTION_NONE];
+        return [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    }else{
+        return [super b:window];
+    }
+}
+
+- (XVimEvaluator*)B:(XVimWindow*)window{
+    if( _insertModeAtCompletion ){
+        // cB is special case of word motion
+        NSUInteger to = [[window sourceView] selectedRange].location;
+        NSUInteger from = [[window sourceView] wordsBackward:to count:[self numericArg] option:BIGWORD];
+        return [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    }else{
+        return [super B:window];
+    }
+}
+
 
 - (XVimEvaluator*)c:(XVimWindow*)window
 {
@@ -192,7 +215,10 @@
 		else {
 			[view setSelectedRangeWithBoundsCheck:from To:from];
 		}
-        return [[XVimInsertEvaluator alloc] initWithContext:[[XVimEvaluatorContext alloc] init]];
+        
+        XVimEvaluatorContext *context = [[[XVimEvaluatorContext alloc] init] autorelease];
+        XVimInsertEvaluator *evaluator = [[XVimInsertEvaluator alloc] initWithContext:context];
+        return [evaluator autorelease];
     }
     return nil;
 }

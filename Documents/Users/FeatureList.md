@@ -63,6 +63,17 @@ Ctrl-v is not supported now.
 
 Visual block mode is currently not supported.
 
+## Window manipulation
+
+ Input     | Operation
+-----------|---------------------------
+  C-w n    | Add new assistant editor
+  C-w q    | Delete one assistant editor
+  C-w s    | Add new assistant editor horizontally
+  C-w v    | Add new assistant editor vertically
+C-w h,j,k,l| Move forcus between editors
+
+
 ## Search and Replace
 
 /, ?, #, \*, g*, g#, :s, n, N
@@ -83,6 +94,10 @@ Currently replacing first occurence of xxxx with yyyy each line is not available
 ## Insert mode commands
 
 C-y, C-e
+
+## Print status commands
+
+C-g
 
 ## Text Object
 
@@ -139,6 +154,9 @@ The dot command ('.') is supported.
   [no]smartcase |
   guioptions | See below
   timeoutlen | The time in milliseconds that is waited for mapped key sequence to complete (default 1000)
+  laststatus | 0 or 1 : status line is hidden, 2 : status line is displayed  (default 2)
+  [no]pasteboard | Whether yank/delete/pull uses the standard clipboard
+>>>>>>> pasteboard
 
 ## guioptions
 

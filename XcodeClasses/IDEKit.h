@@ -215,10 +215,12 @@ typedef struct {
  */
 
 @protocol DVTAssertionHandling <NSObject>
-- (void)handleWarningInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(va_list)arg5;
-- (void)handleWarningInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(va_list)arg6;
-- (void)handleFailureInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(va_list)arg5;
-- (void)handleFailureInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(va_list)arg6;
+#if 0 /* XCODE46_PATCH */
+- (void)handleWarningInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(struct __va_list_tag [1])arg5;
+- (void)handleWarningInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(struct __va_list_tag [1])arg6;
+- (void)handleFailureInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(struct __va_list_tag [1])arg5;
+- (void)handleFailureInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(struct __va_list_tag [1])arg6;
+#endif
 @end
 /*
 @protocol DVTCancellableToken <NSObject>
@@ -3374,10 +3376,12 @@ typedef struct {
 + (BOOL)_crashOnAssertions;
 + (BOOL)_quietAssertions;
 - (void)handleUncaughtException:(id)arg1;
-- (void)handleWarningInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(va_list)arg5;
-- (void)handleWarningInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(va_list)arg6;
-- (void)handleFailureInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(va_list)arg5;
-- (void)handleFailureInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(va_list)arg6;
+#if 0 /* XCODE46_PATCH */
+- (void)handleWarningInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(struct __va_list_tag [1])arg5;
+- (void)handleWarningInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(struct __va_list_tag [1])arg6;
+- (void)handleFailureInFunction:(id)arg1 fileName:(id)arg2 lineNumber:(long long)arg3 messageFormat:(id)arg4 arguments:(struct __va_list_tag [1])arg5;
+- (void)handleFailureInMethod:(SEL)arg1 object:(id)arg2 fileName:(id)arg3 lineNumber:(long long)arg4 messageFormat:(id)arg5 arguments:(struct __va_list_tag [1])arg6;
+#endif
 
 @end
 
@@ -18468,8 +18472,8 @@ typedef struct {
 - (void)moveKeyboardFocusToPreviousArea:(id)arg1;
 - (void)moveKeyboardFocusToNextArea:(id)arg1;
 - (void)_moveKeyboardFocusToNextAreaForward:(BOOL)arg1;
-- (id)_keyboardFocusAreas;
-- (id)_currentFirstResponderArea;
+- (id)_keyboardFocusAreas;    // Returns NSArray ( its like array of IDENavigatorArea, IDEEditorContext, IDEDefaultDebugArea ) These are all IDEViewController derived classes.
+- (id)_currentFirstResponderArea; // Returns IDEEditorContext
 - (void)performCloseWorkspace:(id)arg1;
 - (void)_workspaceDocument:(id)arg1 shouldClose:(BOOL)arg2 contextInfo:(void *)arg3;
 - (void)setShowDisassemblyWhenDebugging:(id)arg1;
@@ -18906,7 +18910,7 @@ typedef struct {
 @property(readonly, getter=isInMiniDebuggingMode) BOOL inMiniDebuggingMode; // @synthesize inMiniDebuggingMode=_inMiniDebuggingMode;
 @property(retain, nonatomic) DVTTabBarView *tabBarView; // @synthesize tabBarView=_tabBarView;
 @property(retain, nonatomic) DVTTabSwitcher *tabSwitcher; // @synthesize tabSwitcher;
-- (void)moveFocusToEditor:(id)arg1;
+- (void)moveFocusToEditor:(id)arg1; // This shows move forcus dialog
 - (void)dicardEditing;
 - (BOOL)commitEditingForAction:(int)arg1 errors:(id)arg2;
 - (void)_updateWindowTitle;

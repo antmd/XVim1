@@ -51,6 +51,7 @@
     if (self) {
         _forceMotionType = NO;
 		_column = NSNotFound;
+        _preserveColumn = NO;
     }
     return self;
 }
@@ -66,7 +67,6 @@
 	{
 		_column = [[window sourceView] columnNumber:[self insertionPointInWindow:window]]; // TODO: Keep column somewhere else
 	}
-	_preserveColumn = NO;
 }
 
 - (void)preserveColumn
@@ -204,7 +204,7 @@
 																			  parent:self];
     eval.forward = YES;
     eval.previous = NO;
-    return eval;
+    return [eval autorelease];
 }
 
 - (XVimEvaluator*)F:(XVimWindow*)window{
@@ -212,7 +212,7 @@
 																			  parent:self];
     eval.forward = NO;
     eval.previous = NO;
-    return eval;
+    return [eval autorelease];
 }
 
 /*
@@ -224,8 +224,8 @@
 */
 
 - (XVimEvaluator*)g:(XVimWindow*)window{
-    return [[XVimGMotionEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"g"]
-																					 parent:self];
+    return [[[XVimGMotionEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"g"]
+																					 parent:self] autorelease];
 }
 
 - (XVimEvaluator*)G:(XVimWindow*)window{
@@ -262,7 +262,8 @@
 	[self preserveColumn];
 	
     NSUInteger to = [[window sourceView] nextLine:from column:column count:[self numericArg] option:MOTION_OPTION_NONE];
-    return [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    return [self withNewContext];
 }
 
 - (XVimEvaluator*)k:(XVimWindow*)window{
@@ -271,7 +272,8 @@
 	[self preserveColumn];
 	
     NSUInteger to = [[window sourceView] prevLine:from column:column count:[self numericArg] option:MOTION_OPTION_NONE];
-    return [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    [self _motionFixedFrom:from To:to Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+    return [self withNewContext];
 }
 
 - (XVimEvaluator*)l:(XVimWindow*)window{
@@ -316,7 +318,7 @@
 																												 parent:self];
     eval.forward = YES;
     eval.previous = YES;
-    return eval;
+    return [eval autorelease];
 }
 
 - (XVimEvaluator*)T:(XVimWindow*)window{
@@ -324,7 +326,7 @@
 																												 parent:self];
     eval.forward = NO;
     eval.previous = YES;
-    return eval;
+    return [eval autorelease];
 }
 
 - (XVimEvaluator*)v:(XVimWindow*)window{
@@ -347,8 +349,8 @@
 }
 
 - (XVimEvaluator*)z:(XVimWindow*)window{
-    return [[XVimZEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"z"]
-																			   parent:self];
+    return [[[XVimZEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"z"]
+																			   parent:self] autorelease];
 }
 
 - (XVimEvaluator*)NUM0:(XVimWindow*)window{
@@ -393,15 +395,15 @@
 //  the range of the document
 
 - (XVimEvaluator*)SQUOTE:(XVimWindow*)window{
-    return [[XVimMarkMotionEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"'"]
+    return [[[XVimMarkMotionEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"'"]
 													 parent:self
-											   markOperator:MARKOPERATOR_MOVETOSTARTOFLINE];
+											   markOperator:MARKOPERATOR_MOVETOSTARTOFLINE] autorelease];
 }
 
 - (XVimEvaluator*)BACKQUOTE:(XVimWindow*)window{
-    return [[XVimMarkMotionEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"`"] 
+    return [[[XVimMarkMotionEvaluator alloc] initWithContext:[[self contextCopy] appendArgument:@"`"]
 													 parent:self
-											   markOperator:MARKOPERATOR_MOVETO];
+											   markOperator:MARKOPERATOR_MOVETO] autorelease];
 }
 
 // CARET ( "^") moves the cursor to the start of the currentline (past leading whitespace)
@@ -415,6 +417,24 @@
     }
     return [self _motionFixedFrom:r.location To:head Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
 }
+
+// Underscore ( "_") moves the cursor to the start of the line (past leading whitespace)
+// Note: underscore without any numeric arguments behaves like caret but with a numeric argument greater than 1
+// it will moves to start of the numeric argument - 1 lines down.
+- (XVimEvaluator*)UNDERSCORE:(XVimWindow*)window{
+    XVimSourceView* view = [window sourceView];
+    NSRange r = [view selectedRange];
+    NSUInteger repeat = [[self context] numericArg];
+    NSUInteger linesUpCursorloc = [view nextLine:r.location column:0 count:(repeat - 1) option:MOTION_OPTION_NONE];
+    NSUInteger head = [view headOfLineWithoutSpaces:linesUpCursorloc];
+    if( NSNotFound == head && linesUpCursorloc != NSNotFound){
+        head = linesUpCursorloc;
+    }else if(NSNotFound == head){
+        head = r.location;
+    }
+    return [self _motionFixedFrom:r.location To:head Type:CHARACTERWISE_EXCLUSIVE inWindow:window];
+}
+
 
 - (XVimEvaluator*)DOLLAR:(XVimWindow*)window{
     NSRange begin = [[window sourceView] selectedRange];
@@ -715,12 +735,12 @@
 
 - (XVimRegisterOperation)shouldRecordEvent:(XVimKeyStroke*) keyStroke inRegister:(XVimRegister*)xregister{
     if (xregister.isRepeat){
-        if (xregister.nonNumericKeyCount == 1){
-            if([keyStroke classResponds:[XVimMotionEvaluator class]] || keyStroke.isNumeric){
-                return REGISTER_APPEND;
-            }
-        }
-
+        // DOT command register
+        /*
+         * XVimMotionEvaluator which deals with MOTION should not record
+         * commands for DOT command operation.
+         * XVimXXXEvaluator inherited from XVimMotionEvaluator should deal with it.
+         */
         return REGISTER_IGNORE;
     }
     

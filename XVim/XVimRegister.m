@@ -10,10 +10,13 @@
 #import "XVimEvaluator.h"
 #import "XVimKeyStroke.h"
 #import "XVimPlaybackHandler.h"
+#import "XVim.h"
+#import "Logger.h"
 
 @interface XVimRegister() {
 	NSRange _selectedRange;
 	VISUAL_MODE _visualMode;
+    NSMutableString* _text;
 }
 @property (readwrite) BOOL isPlayingBack;
 @property (strong) NSMutableArray *keyEventsAndInsertedText;
@@ -21,14 +24,50 @@
 
 @implementation XVimRegister
 
-@synthesize text = _text;
 @synthesize displayName = _displayName;
 @synthesize isPlayingBack = _isPlayingBack;
 @synthesize keyEventsAndInsertedText = _keyEventsAndInsertedText;
 @synthesize nonNumericKeyCount = _nonNumericKeyCount;
 
+-(void)setText:(NSMutableString*)text
+{
+	@synchronized(self)
+	{
+		if( ![_displayName isEqualToString:@"%"] ) {
+			if( text != _text ){
+				[_text release];
+				_text = [text retain];
+			}
+		} else {
+			ERROR_LOG( "assert!" );
+		}
+	}
+}
+
+-(NSMutableString*)text
+{
+    NSMutableString *text = nil;
+	@synchronized(self)
+	{
+		if( [_displayName isEqualToString:@"%"] ){
+            // current file name register
+            NSString *document = [[XVim instance] document];
+            text = [NSMutableString stringWithString:document];
+		} else {
+            text = _text;
+		}
+	}
+    return text ? [[text retain] autorelease] : nil;
+}
+
 -(NSString*) description{
-    return [[NSString alloc] initWithFormat:@"\"%@: %@", self.displayName, self.text];
+    return [NSString stringWithFormat:@"\"%@: %@", self.displayName, self.text];
+}
+
++ (XVimRegister *)registerWithDisplayName:(NSString *)displayName
+{
+    XVimRegister *newRegister = [[XVimRegister alloc] initWithDisplayName:displayName];
+    return [newRegister autorelease];
 }
 
 -(id) initWithDisplayName:(NSString*)displayName
@@ -36,13 +75,20 @@
     self = [super init];
     if (self) {
         _keyEventsAndInsertedText = [[NSMutableArray alloc] init];
-        _text = [NSMutableString stringWithString:@""];
-        _displayName = [NSString stringWithString:displayName];
+        _text = [[@"" mutableCopy] retain];
+        _displayName = [displayName retain];
         _nonNumericKeyCount = 0;
         _isPlayingBack = NO;
 		_selectedRange.location = NSNotFound;
     }
     return self;
+}
+
+- (void)dealloc
+{
+    [_text release];
+    [_displayName release];
+    [super dealloc];
 }
 
 -(BOOL) isAlpha{

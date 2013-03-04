@@ -101,7 +101,7 @@ static Logger* s_defaultLogger = nil;
     
     // Write to file
     if( nil != _logFile) {
-        NSString* msg = [[NSString alloc] initWithFormat: fmt arguments: args2];
+        NSString* msg = [[[NSString alloc] initWithFormat:fmt arguments:args2] autorelease];
         [_logFile writeData:[msg dataUsingEncoding:NSUTF8StringEncoding]];
         [_logFile writeData:[@"\n" dataUsingEncoding:NSUTF8StringEncoding]];
     }
@@ -250,4 +250,22 @@ static Logger* s_defaultLogger = nil;
     }
 }
 
+
++ (void)traceMenu:(NSMenu*)menu :(int)depth{
+    NSMutableString* tabs = [[[NSMutableString alloc] init] autorelease];
+    for( int i = 0 ; i < depth; i++ ){
+        [tabs appendString:@"\t"];
+    }
+    for(NSMenuItem* item in [menu itemArray] ){
+        if( ![item isSeparatorItem]  ){
+            TRACE_LOG(@"%@Title:%@    Action:%@", tabs, [item title], NSStringFromSelector([item action]));
+        }
+        [Logger traceMenu:[item submenu] :depth+1];
+    }
+}
+
++ (void)traceMenu:(NSMenu*)menu{
+    TRACE_LOG(@"Tracing menu items in menu(%p)", menu);
+    [Logger traceMenu:menu :0];
+}
 @end

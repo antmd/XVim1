@@ -21,6 +21,8 @@
 #import "XVimKeymap.h"
 #import "XVimOptions.h"
 #import "IDEKit.h"
+#import "XVimDebug.h"
+#import "XVimRegister.h"
 
 @implementation XVimExArg
 @synthesize arg,cmd,forceit,noRangeSpecified,lineBegin,lineEnd,addr_count;
@@ -899,7 +901,9 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
     }
     else if( [setCommand isEqualToString:@"nowrap"] ){
         [srcView setWrapsLines:NO];
-    }                
+    } else if( [setCommand isEqualToString:@"list!"] ){
+      [NSApp sendAction:@selector(toggleInvisibleCharactersShown:) to:nil from:self];
+    }
 }
 
 
@@ -919,22 +923,15 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
     [ [XVimWindowManager instance] removeEditorWindow ];
 }
 
-/*
-- (void)debugMenu:(NSMenu*)menu :(int)depth{
-    NSMutableString* tabs = [[[NSMutableString alloc] init] autorelease];
-    for( int i = 0 ; i < depth; i++ ){
-        [tabs appendString:@"\t"];
+- (void)debug:(XVimExArg*)args inWindow:(XVimWindow*)window{
+    NSArray* params = [args.arg componentsSeparatedByString:@" "];
+    if( [params count] == 0 ){
+        return;
     }
-    for(NSMenuItem* item in [menu itemArray] ){
-        if( ![item isSeparatorItem]  ){
-            TRACE_LOG(@"%@Title:%@    Action:%@", tabs, [item title], NSStringFromSelector([item action]));
-        }
-        [self debugMenu:[item submenu] :depth+1];
+    XVimDebug* debug = [[[XVimDebug alloc] init] autorelease];
+    if( [debug respondsToSelector:NSSelectorFromString([params objectAtIndex:0])] ){
+        [debug performSelector:NSSelectorFromString([params objectAtIndex:0])];
     }
-}
- */
-- (void)debug:(XVimExArg*)args inWindow:(XVimWindow*)window
-{
 }
 
 -(void)copen:(XVimExArg*)args inWindow:(XVimWindow*)window
@@ -952,7 +949,22 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 
 - (void)reg:(XVimExArg*)args inWindow:(XVimWindow*)window
 {
-    TRACE_LOG(@"registers: %@", [[XVim instance] registers])
+    //TRACE_LOG(@"registers: %@", [[XVim instance] registers])
+    NSDictionary* dic = [XVim instance].registers;
+    NSArray* aryKeys = [[dic allKeys] sortedArrayUsingSelector:@selector(compare:)];
+    for( NSString* key in aryKeys ){
+        XVimRegister* reg = [dic valueForKey:key];
+        bool isUserRegister = false;
+        if( reg.displayName.length > 0 ){
+            unichar uc = [reg.displayName characterAtIndex:0];
+            if( uc >= 'a' && uc <='z' ){
+                isUserRegister = true;
+            }
+        }
+        if( !isUserRegister || reg.text.length > 0 ){
+            TRACE_LOG( @"\"%@   %@", reg.displayName, reg.text );
+        }
+    }
 }
 
 -(void)bang:(XVimExArg*)args inWindow:(XVimWindow*)window

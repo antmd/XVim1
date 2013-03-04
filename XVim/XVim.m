@@ -39,8 +39,10 @@
 #import "XVimHookManager.h"
 #import "XVimCommandLine.h"
 #import "GlobalMarksViewController.h"
+#import "DVTSourceTextViewHook.h"
 
-static XVim* s_instance = nil;
+NSString * const XVimDocumentChangedNotification = @"XVimDocumentChangedNotification";
+NSString * const XVimDocumentPathKey = @"XVimDocumentPathKey";
 
 @interface XVim() {
 	XVimHistoryHandler *_exCommandHistory;
@@ -62,11 +64,26 @@ static XVim* s_instance = nil;
 @synthesize characterSearcher = _characterSearcher;
 @synthesize excmd = _excmd;
 @synthesize options = _options;
+@synthesize document = _document;
 
 +(void)receiveNotification:(NSNotification*)notification{
     if( [notification.name hasPrefix:@"IDE"] || [notification.name hasPrefix:@"DVT"] ){
         TRACE_LOG(@"Got notification name : %@    object : %@", notification.name, NSStringFromClass([[notification object] class]));
     }
+}
+
+- (void)toggleXVim:(id)sender{
+    if( [sender state] == NSOnState ){
+        [DVTSourceTextViewHook unhook];
+        [sender setState:NSOffState];
+    }else{
+        [DVTSourceTextViewHook hook];
+        [sender setState:NSOnState];
+    }
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem{
+    return YES;
 }
 
 + (void) load 
@@ -79,13 +96,26 @@ static XVim* s_instance = nil;
     }
     // Entry Point of the Plugin.
     [Logger defaultLogger].level = LogTrace;
-	
-	// Allocate singleton instance
-	s_instance = [[XVim alloc] init];
-    [s_instance.options addObserver:s_instance forKeyPath:@"debug" options:NSKeyValueObservingOptionNew context:nil];
-	[s_instance parseRcFile];
     
-    TRACE_LOG(@"XVim loaded");
+    // Add XVim menu item in "Edit"
+    // I have tried to add the item into "Editor" but did not work.
+    // It looks that the initialization of "Editor" menu is after loading XVim...
+    NSMenu* menu = [[NSApplication sharedApplication] mainMenu];
+    NSMenuItem* item = [[[NSMenuItem alloc] init] autorelease];
+    item.title = @"XVim";
+    [item setEnabled:YES];
+    item.target = [XVim instance];
+    
+    //Caution: parseRcFile can potentially invoke +instance on XVim (e.g. if "set ..." is
+    //used in .ximvrc) so we must be sure to call it _AFTER_ +instance has completed
+    [item.target parseRcFile];
+    
+    
+    item.action = @selector(toggleXVim:);
+    item.state = NSOnState;
+    NSMenuItem* editorManu = [menu itemWithTitle:@"Edit"];
+    NSMenu* editorSubMenu = [editorManu submenu];
+    [editorSubMenu addItem:item];
     
     // This is for reverse engineering purpose. Comment this in and log all the notifications named "IDE" or "DVT"
     //[[NSNotificationCenter defaultCenter] addObserver:[XVim class] selector:@selector(receiveNotification:) name:nil object:nil];
@@ -105,7 +135,17 @@ static XVim* s_instance = nil;
 
 + (XVim*)instance
 {
-	return s_instance;
+    static XVim *__instance = nil;
+    static dispatch_once_t __once;
+    
+    dispatch_once(&__once, ^{
+        // Allocate singleton instance
+        __instance = [[XVim alloc] init];
+        [__instance.options addObserver:__instance forKeyPath:@"debug" options:NSKeyValueObservingOptionNew context:nil];
+        
+        TRACE_LOG(@"XVim loaded");
+    });
+	return __instance;
 }
 
 //////////////////////////////
@@ -126,70 +166,69 @@ static XVim* s_instance = nil;
 		// There are nine types of registers:
 		// *registers* *E354*
 		_registers =
-        [NSDictionary dictionaryWithObjectsAndKeys:
+        [[NSDictionary alloc] initWithObjectsAndKeys:
 		 // 1. The unnamed register ""
-		 [[XVimRegister alloc] initWithDisplayName:@"\""] ,@"DQUOTE", 
+		 [XVimRegister registerWithDisplayName:@"\""] ,@"DQUOTE", 
 		 // 2. 10 numbered registers "0 to "9 
-		 [[XVimRegister alloc] initWithDisplayName:@"0"] ,@"NUM0", 
-		 [[XVimRegister alloc] initWithDisplayName:@"1"] ,@"NUM1", 
-		 [[XVimRegister alloc] initWithDisplayName:@"2"] ,@"NUM2", 
-		 [[XVimRegister alloc] initWithDisplayName:@"3"] ,@"NUM3", 
-		 [[XVimRegister alloc] initWithDisplayName:@"4"] ,@"NUM4", 
-		 [[XVimRegister alloc] initWithDisplayName:@"5"] ,@"NUM5", 
-		 [[XVimRegister alloc] initWithDisplayName:@"6"] ,@"NUM6", 
-		 [[XVimRegister alloc] initWithDisplayName:@"7"] ,@"NUM7", 
-		 [[XVimRegister alloc] initWithDisplayName:@"8"] ,@"NUM8", 
-		 [[XVimRegister alloc] initWithDisplayName:@"9"] ,@"NUM9", 
+		 [XVimRegister registerWithDisplayName:@"0"] ,@"NUM0", 
+		 [XVimRegister registerWithDisplayName:@"1"] ,@"NUM1", 
+		 [XVimRegister registerWithDisplayName:@"2"] ,@"NUM2", 
+		 [XVimRegister registerWithDisplayName:@"3"] ,@"NUM3", 
+		 [XVimRegister registerWithDisplayName:@"4"] ,@"NUM4", 
+		 [XVimRegister registerWithDisplayName:@"5"] ,@"NUM5", 
+		 [XVimRegister registerWithDisplayName:@"6"] ,@"NUM6", 
+		 [XVimRegister registerWithDisplayName:@"7"] ,@"NUM7", 
+		 [XVimRegister registerWithDisplayName:@"8"] ,@"NUM8", 
+		 [XVimRegister registerWithDisplayName:@"9"] ,@"NUM9", 
 		 // 3. The small delete register "-
-		 [[XVimRegister alloc] initWithDisplayName:@"-"] ,@"DASH", 
+		 [XVimRegister registerWithDisplayName:@"-"] ,@"DASH", 
 		 // 4. 26 named registers "a to "z or "A to "Z
-		 [[XVimRegister alloc] initWithDisplayName:@"a"] ,@"a", 
-		 [[XVimRegister alloc] initWithDisplayName:@"b"] ,@"b", 
-		 [[XVimRegister alloc] initWithDisplayName:@"c"] ,@"c", 
-		 [[XVimRegister alloc] initWithDisplayName:@"d"] ,@"d", 
-		 [[XVimRegister alloc] initWithDisplayName:@"e"] ,@"e", 
-		 [[XVimRegister alloc] initWithDisplayName:@"f"] ,@"f", 
-		 [[XVimRegister alloc] initWithDisplayName:@"g"] ,@"g", 
-		 [[XVimRegister alloc] initWithDisplayName:@"h"] ,@"h", 
-		 [[XVimRegister alloc] initWithDisplayName:@"i"] ,@"i", 
-		 [[XVimRegister alloc] initWithDisplayName:@"j"] ,@"j", 
-		 [[XVimRegister alloc] initWithDisplayName:@"k"] ,@"k", 
-		 [[XVimRegister alloc] initWithDisplayName:@"l"] ,@"l", 
-		 [[XVimRegister alloc] initWithDisplayName:@"m"] ,@"m", 
-		 [[XVimRegister alloc] initWithDisplayName:@"n"] ,@"n", 
-		 [[XVimRegister alloc] initWithDisplayName:@"o"] ,@"o", 
-		 [[XVimRegister alloc] initWithDisplayName:@"p"] ,@"p", 
-		 [[XVimRegister alloc] initWithDisplayName:@"q"] ,@"q", 
-		 [[XVimRegister alloc] initWithDisplayName:@"r"] ,@"r", 
-		 [[XVimRegister alloc] initWithDisplayName:@"s"] ,@"s", 
-		 [[XVimRegister alloc] initWithDisplayName:@"t"] ,@"t", 
-		 [[XVimRegister alloc] initWithDisplayName:@"u"] ,@"u", 
-		 [[XVimRegister alloc] initWithDisplayName:@"v"] ,@"v", 
-		 [[XVimRegister alloc] initWithDisplayName:@"w"] ,@"w", 
-		 [[XVimRegister alloc] initWithDisplayName:@"x"] ,@"x", 
-		 [[XVimRegister alloc] initWithDisplayName:@"y"] ,@"y", 
-		 [[XVimRegister alloc] initWithDisplayName:@"z"] ,@"z", 
+		 [XVimRegister registerWithDisplayName:@"a"] ,@"a", 
+		 [XVimRegister registerWithDisplayName:@"b"] ,@"b", 
+		 [XVimRegister registerWithDisplayName:@"c"] ,@"c", 
+		 [XVimRegister registerWithDisplayName:@"d"] ,@"d", 
+		 [XVimRegister registerWithDisplayName:@"e"] ,@"e", 
+		 [XVimRegister registerWithDisplayName:@"f"] ,@"f", 
+		 [XVimRegister registerWithDisplayName:@"g"] ,@"g", 
+		 [XVimRegister registerWithDisplayName:@"h"] ,@"h", 
+		 [XVimRegister registerWithDisplayName:@"i"] ,@"i", 
+		 [XVimRegister registerWithDisplayName:@"j"] ,@"j", 
+		 [XVimRegister registerWithDisplayName:@"k"] ,@"k", 
+		 [XVimRegister registerWithDisplayName:@"l"] ,@"l", 
+		 [XVimRegister registerWithDisplayName:@"m"] ,@"m", 
+		 [XVimRegister registerWithDisplayName:@"n"] ,@"n", 
+		 [XVimRegister registerWithDisplayName:@"o"] ,@"o", 
+		 [XVimRegister registerWithDisplayName:@"p"] ,@"p", 
+		 [XVimRegister registerWithDisplayName:@"q"] ,@"q", 
+		 [XVimRegister registerWithDisplayName:@"r"] ,@"r", 
+		 [XVimRegister registerWithDisplayName:@"s"] ,@"s", 
+		 [XVimRegister registerWithDisplayName:@"t"] ,@"t", 
+		 [XVimRegister registerWithDisplayName:@"u"] ,@"u", 
+		 [XVimRegister registerWithDisplayName:@"v"] ,@"v", 
+		 [XVimRegister registerWithDisplayName:@"w"] ,@"w", 
+		 [XVimRegister registerWithDisplayName:@"x"] ,@"x", 
+		 [XVimRegister registerWithDisplayName:@"y"] ,@"y", 
+		 [XVimRegister registerWithDisplayName:@"z"] ,@"z", 
 		 // 5. four read-only registers ":, "., "% and "#
-		 [[XVimRegister alloc] initWithDisplayName:@":"] ,@"COLON", 
-		 [[XVimRegister alloc] initWithDisplayName:@"."] ,@"DOT", 
-		 [[XVimRegister alloc] initWithDisplayName:@"%"] ,@"PERCENT", 
-		 [[XVimRegister alloc] initWithDisplayName:@"#"] ,@"NUMBER", 
+		 [XVimRegister registerWithDisplayName:@":"] ,@"COLON", 
+		 [XVimRegister registerWithDisplayName:@"."] ,@"DOT", 
+		 [XVimRegister registerWithDisplayName:@"%"] ,@"PERCENT", 
+		 [XVimRegister registerWithDisplayName:@"#"] ,@"NUMBER", 
 		 // 6. the expression register "=
-		 [[XVimRegister alloc] initWithDisplayName:@"="] ,@"EQUAL", 
+		 [XVimRegister registerWithDisplayName:@"="] ,@"EQUAL", 
 		 // 7. The selection and drop registers "*, "+ and "~  
-		 [[XVimRegister alloc] initWithDisplayName:@"*"] ,@"ASTERISK", 
-		 [[XVimRegister alloc] initWithDisplayName:@"+"] ,@"PLUS", 
-		 [[XVimRegister alloc] initWithDisplayName:@"~"] ,@"TILDE", 
+		 [XVimRegister registerWithDisplayName:@"*"] ,@"ASTERISK", 
+		 [XVimRegister registerWithDisplayName:@"+"] ,@"PLUS", 
+		 [XVimRegister registerWithDisplayName:@"~"] ,@"TILDE", 
 		 // 8. The black hole register "_
-		 [[XVimRegister alloc] initWithDisplayName:@"_"] ,@"UNDERSCORE", 
+		 [XVimRegister registerWithDisplayName:@"_"] ,@"UNDERSCORE", 
 		 // 9. Last search pattern register "/
-		 [[XVimRegister alloc] initWithDisplayName:@"/"] ,@"SLASH", 
+		 [XVimRegister registerWithDisplayName:@"/"] ,@"SLASH", 
 		 // additional "hidden" register to store text for '.' command
-		 [[XVimRegister alloc] initWithDisplayName:@"repeat"] ,@"repeat", 
+		 [XVimRegister registerWithDisplayName:@"repeat"] ,@"repeat",
 		 nil];
 
-        _numberedRegisters =
-        [NSArray arrayWithObjects:
+        _numberedRegisters = [[NSArray alloc] initWithObjects:
          [_registers valueForKey:@"NUM0"],
          [_registers valueForKey:@"NUM1"],
          [_registers valueForKey:@"NUM2"],
@@ -230,18 +269,27 @@ static XVim* s_instance = nil;
 	[_characterSearcher release];
     [_excmd release];
     [_logFile release];
+    [_numberedRegisters release];
 	[super dealloc];
 }
 
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
     if( [keyPath isEqualToString:@"debug"]) {
-        if( [s_instance options].debug ){
+        if( [[XVim instance] options].debug ){
             NSString *homeDir = NSHomeDirectoryForUser(NSUserName());
             NSString *logPath = [homeDir stringByAppendingString: @"/.xvimlog"]; 
             [[Logger defaultLogger] setLogFile:logPath];
         }else{
             [[Logger defaultLogger] setLogFile:nil];
+        }
+    } else if( [keyPath isEqualToString:@"document"] ){
+        NSString *documentPath = [[[object document] fileURL] path];
+        self.document = documentPath;
+        
+        if (documentPath != nil) {
+            NSDictionary *userInfo = [NSDictionary dictionaryWithObject:documentPath forKey:XVimDocumentPathKey];
+            [[NSNotificationCenter defaultCenter] postNotificationName:XVimDocumentChangedNotification object:nil userInfo:userInfo];
         }
     }
 }
@@ -249,9 +297,9 @@ static XVim* s_instance = nil;
 - (void)parseRcFile {
     NSString *homeDir = NSHomeDirectoryForUser(NSUserName());
     NSString *keymapPath = [homeDir stringByAppendingString: @"/.xvimrc"]; 
-    NSString *keymapData = [[NSString alloc] initWithContentsOfFile:keymapPath 
+    NSString *keymapData = [[[NSString alloc] initWithContentsOfFile:keymapPath
                                                            encoding:NSUTF8StringEncoding
-															  error:NULL];
+															  error:NULL] autorelease];
 	for (NSString *string in [keymapData componentsSeparatedByString:@"\n"])
 	{
 		[self.excmd executeCommand:[@":" stringByAppendingString:string] inWindow:nil];
@@ -303,7 +351,9 @@ static XVim* s_instance = nil;
     return;
 }
 
-- (void)onDeleteOrYank:(XVimRegister*)yankRegister
+- (void)onDeleteOrYank:(BOOL)deleteOrYank
+              Register:(XVimRegister*)yankRegister
+                  text:(NSString*)text
 {
     // Don't do anything if we are recording into a register (that isn't the repeat register)
     if (self.recordingRegister != nil){
@@ -312,36 +362,61 @@ static XVim* s_instance = nil;
 
     // If we are yanking into a specific register then we do not cycle through
     // the numbered registers.
-    if (yankRegister != nil){
+    if ([yankRegister.displayName isEqualToString:@"*"]){
+        [[NSPasteboard generalPasteboard] declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
+        [[NSPasteboard generalPasteboard] setString:text forType:NSStringPboardType];
+    }
+    else if (yankRegister != nil){
         [yankRegister clear];
-        [yankRegister appendText:[[NSPasteboard generalPasteboard]stringForType:NSStringPboardType]];
-    }else{
+        [yankRegister appendText:text];
+    }
+    else {
         // There are 10 numbered registers
-        for (NSUInteger i = self.numberedRegisters.count - 2; ; --i){
-            XVimRegister *prev = [self.numberedRegisters objectAtIndex:i];
-            XVimRegister *next = [self.numberedRegisters objectAtIndex:i+1];
-            
-            [next clear];
-            [next appendText:prev.text];
-            if( i == 0 ){
-                break;
+        if( deleteOrYank ){
+            // delete or change use "1 - "9
+            for (NSUInteger i = self.numberedRegisters.count - 2; i >= 1 ; --i){
+                XVimRegister *prev = [self.numberedRegisters objectAtIndex:i];
+                XVimRegister *next = [self.numberedRegisters objectAtIndex:i+1];
+                
+                [next clear];
+                [next appendText:prev.text];
             }
+            XVimRegister *reg = [self.numberedRegisters objectAtIndex:1];
+            [reg clear];
+            [reg appendText:text];
+        } else {
+            // yank use "0
+            XVimRegister *reg = [self.numberedRegisters objectAtIndex:0];
+            [reg clear];
+            [reg appendText:text];
         }
         
-        XVimRegister *reg = [self.numberedRegisters objectAtIndex:0];
-        [reg clear];
-        [reg appendText:[[NSPasteboard generalPasteboard]stringForType:NSStringPboardType]];
+        if ( self.options.pasteboard ) {
+            [[NSPasteboard generalPasteboard] declareTypes:[NSArray arrayWithObject:NSStringPboardType] owner:nil];
+            [[NSPasteboard generalPasteboard] setString:text forType:NSStringPboardType];
+        }
     }
+    
+    XVimRegister *defaultReg = [self findRegister:@"DQUOTE"];
+    [defaultReg clear];
+    [defaultReg appendText:text];
 }
 
 - (NSString*)pasteText:(XVimRegister*)yankRegister
 {
-	if (yankRegister)
+    if ([yankRegister.displayName isEqualToString:@"*"]) {
+        return [[NSPasteboard generalPasteboard]stringForType:NSStringPboardType];
+    }
+	else if (yankRegister)
 	{
 		return yankRegister.text;
 	}
-
-    return [[NSPasteboard generalPasteboard]stringForType:NSStringPboardType];
+    else if (self.options.pasteboard) {
+        return [[NSPasteboard generalPasteboard] stringForType:NSStringPboardType];
+    }
+    else {
+        return [[self findRegister:@"DQUOTE"] text];
+    }
 }
 
 -(NSWindow*)_globalMarksWindow

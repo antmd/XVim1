@@ -104,7 +104,13 @@
     [_error release];
     [_quickFixScrollView release];
     [_argument release];
+    [_errorTimer release];
     [super dealloc];
+}
+
+- (NSInteger)tag
+{
+    return XVimCommandLineTag;
 }
 
 - (void)viewDidMoveToSuperview
@@ -127,15 +133,31 @@
     [_argument setString:string];
 }
 
-- (void)errorMessage:(NSString*)string
+/**
+ * (BOOL)aRedColorSetting
+ *      YES: red color background
+ *      NO : white color background
+ */
+- (void)errorMessage:(NSString*)string Timer:(BOOL)aTimer RedColorSetting:(BOOL)aRedColorSetting
 {
+    if( aRedColorSetting ){
+        _error.backgroundColor = [NSColor redColor];
+    } else {
+        _error.backgroundColor = [NSColor whiteColor];
+    }
 	NSString* msg = string;
 	if( [msg length] != 0 ){
 		[_error setString:msg];
 		[_error setHidden:NO];
 		[_errorTimer invalidate];
-		_errorTimer = [NSTimer timerWithTimeInterval:3.0 target:self selector:@selector(errorMsgExpired) userInfo:nil repeats:NO];
-		[[NSRunLoop currentRunLoop] addTimer:_errorTimer forMode:NSDefaultRunLoopMode];
+        if( aTimer ){
+            if (_errorTimer != nil) {
+                [_errorTimer release];
+            }
+            
+            _errorTimer = [[NSTimer timerWithTimeInterval:3.0 target:self selector:@selector(errorMsgExpired) userInfo:nil repeats:NO] retain];
+            [[NSRunLoop currentRunLoop] addTimer:_errorTimer forMode:NSDefaultRunLoopMode];
+        }
 	}else{
 		[_errorTimer invalidate];
 		[_error setHidden:YES];

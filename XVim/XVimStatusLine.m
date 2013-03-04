@@ -12,8 +12,16 @@
 #import "Logger.h"
 #import "NSInsetTextView.h"
 #import <objc/runtime.h>
+#import "XVim.h"
+#import "XVimOptions.h"
 
 #define STATUS_LINE_HEIGHT 18 
+
+@interface XVimStatusLine ()
+
+- (void)_documentChangedNotification:(NSNotification *)notification;
+
+@end
 
 @implementation XVimStatusLine{
     DVTChooserView* _background;
@@ -31,6 +39,8 @@
         _status.backgroundColor = [NSColor clearColor];
         [_status setEditable:NO];
         
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_documentChangedNotification:) name:XVimDocumentChangedNotification object:nil];
+        
         [self addSubview:_background];
         [self addSubview:_status];
     }
@@ -40,6 +50,8 @@
 
 - (void)dealloc
 {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
     [_background release];
     [_status release];
     [super dealloc];
@@ -55,10 +67,17 @@
 	CGFloat verticalInset = MAX((STATUS_LINE_HEIGHT - [sourceFont pointSize]) / 2, 0);
 	CGSize inset = CGSizeMake(horizontalInset, verticalInset);
 	
-    NSRect parent = [container frame];
-    [self setFrame:NSMakeRect(0, 0, parent.size.width, STATUS_LINE_HEIGHT)];
-    [_background setFrame:NSMakeRect(0, 0, parent.size.width, STATUS_LINE_HEIGHT)];
-    [_status setFrame:NSMakeRect(0, 0, parent.size.width, STATUS_LINE_HEIGHT)];
+    XVimOptions* options = [[XVim instance] options];
+    CGFloat height;
+    if( options.laststatus == 2 ){
+        height = STATUS_LINE_HEIGHT;
+    } else {
+        height = 0;
+    }
+    NSRect parentRect = [container frame];
+    [self setFrame:NSMakeRect(0, 0, parentRect.size.width, height)];
+    [_background setFrame:NSMakeRect(0, 0, parentRect.size.width, STATUS_LINE_HEIGHT)];
+    [_status setFrame:NSMakeRect(0, 0, parentRect.size.width, STATUS_LINE_HEIGHT)];
 	[_status setFont:sourceFont];
 	[_status setInset:inset];
     // This is heuristic way...
@@ -66,7 +85,7 @@
         // Nothing ( Maybe AutoLayout view does the job "automatically")
     }else{
         if( [container subviews].count > 0 ){
-            [[[container subviews] objectAtIndex:0] setFrame:NSMakeRect(0, STATUS_LINE_HEIGHT, parent.size.width, parent.size.height-STATUS_LINE_HEIGHT)];
+            [[[container subviews] objectAtIndex:0] setFrame:NSMakeRect(0, height, parentRect.size.width, parentRect.size.height-height)];
         }
     }
 }
@@ -79,9 +98,11 @@
      
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
-    if( [keyPath isEqualToString:@"document"] ){
-        [_status setString:[[[object document] fileURL] path]];
+- (void)_documentChangedNotification:(NSNotification *)notification
+{
+    NSString *documentPath = [[notification userInfo] objectForKey:XVimDocumentPathKey];
+    if (documentPath != nil) {
+        [_status setString:documentPath];
     }
 }
 

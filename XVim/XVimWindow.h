@@ -14,12 +14,13 @@
 @class XVimSourceView;
 @class XVimEvaluator;
 @class XVimRegister;
+@class IDEWorkspaceWindow;
 
 @interface XVimWindow : NSObject <NSTextFieldDelegate, XVimCommandFieldDelegate, XVimPlaybackHandler>
 
 @property(retain) XVimSourceView* sourceView;
 @property(readonly) XVimEvaluator *currentEvaluator;
-@property(assign) XVimCommandLine *commandLine;
+@property(retain) XVimCommandLine *commandLine;
 
 
 - (NSUInteger)insertionPoint;
@@ -48,6 +49,7 @@
 - (void)stopRecordingRegister:(XVimRegister*)xregister;
 
 - (void)errorMessage:(NSString *)message ringBell:(BOOL)ringBell;
+- (void)statusMessage:(NSString*)message;
 - (void)clearErrorMessage;
 
 - (void)showQuickfixWithString:(NSString *)message;
@@ -58,5 +60,7 @@
 
 
 - (void)setForcusBackToSourceView;
+
+- (IDEWorkspaceWindow*)currentWorkspaceWindow;
 
 @end

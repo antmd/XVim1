@@ -222,45 +222,45 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 - (XVimEvaluator*)a:(XVimWindow*)window
 {
     [self updateSelectionInWindow:window];
-	XVimOperatorAction *action = [[XVimSelectAction alloc] init];
-	XVimEvaluator *evaluator = [[XVimTextObjectEvaluator alloc] initWithContext:[XVimEvaluatorContext contextWithArgument:@"a"]
+	XVimOperatorAction *action = [[[XVimSelectAction alloc] init] autorelease];
+	XVimEvaluator *evaluator = [[[XVimTextObjectEvaluator alloc] initWithContext:[XVimEvaluatorContext contextWithArgument:@"a"]
 																 operatorAction:action 
 																	 withParent:self
-																	  inclusive:YES];
+																	  inclusive:YES] autorelease];
 	return evaluator;
 }
 
 - (XVimEvaluator*)c:(XVimWindow*)window{
     [self updateSelectionInWindow:window];
-	XVimOperatorAction *action = [[XVimDeleteAction alloc] initWithYankRegister:[self yankRegister]
-														 insertModeAtCompletion:YES];	
-    XVimDeleteEvaluator *evaluator = [[XVimDeleteEvaluator alloc] initWithContext:[self contextCopy]
+	XVimOperatorAction *action = [[[XVimDeleteAction alloc] initWithYankRegister:[self yankRegister]
+														 insertModeAtCompletion:YES] autorelease];
+    XVimDeleteEvaluator *evaluator = [[[XVimDeleteEvaluator alloc] initWithContext:[self contextCopy]
 																   operatorAction:action 
 																	   withParent:self
-														   insertModeAtCompletion:YES];
+														   insertModeAtCompletion:YES] autorelease];
     return [evaluator motionFixedFrom:_selection_begin To:_selection_end Type:CHARACTERWISE_INCLUSIVE inWindow:window];
 }
 
 - (XVimEvaluator*)d:(XVimWindow*)window{
     [self updateSelectionInWindow:window];
-	XVimOperatorAction *action = [[XVimDeleteAction alloc] initWithYankRegister:[self yankRegister]
-														 insertModeAtCompletion:NO];	
-    XVimDeleteEvaluator *evaluator = [[XVimDeleteEvaluator alloc] initWithContext:[self contextCopy]
+	XVimOperatorAction *action = [[[XVimDeleteAction alloc] initWithYankRegister:[self yankRegister]
+														 insertModeAtCompletion:NO] autorelease];
+    XVimDeleteEvaluator *evaluator = [[[XVimDeleteEvaluator alloc] initWithContext:[self contextCopy]
 																   operatorAction:action 
 																	   withParent:self
-														   insertModeAtCompletion:NO];
+														   insertModeAtCompletion:NO] autorelease];
     return [evaluator motionFixedFrom:_selection_begin To:_selection_end Type:CHARACTERWISE_INCLUSIVE inWindow:window];
 }
 
 
 - (XVimEvaluator*)D:(XVimWindow*)window{
     [self updateSelectionInWindow:window];
-	XVimOperatorAction *action = [[XVimDeleteAction alloc] initWithYankRegister:[self yankRegister]
-														 insertModeAtCompletion:NO];	
-    XVimDeleteEvaluator *evaluator = [[XVimDeleteEvaluator alloc] initWithContext:[self contextCopy]
+	XVimOperatorAction *action = [[[XVimDeleteAction alloc] initWithYankRegister:[self yankRegister]
+														 insertModeAtCompletion:NO] autorelease];
+    XVimDeleteEvaluator *evaluator = [[[XVimDeleteEvaluator alloc] initWithContext:[self contextCopy]
 																   operatorAction:action 
 																	   withParent:self
-														   insertModeAtCompletion:NO];
+														   insertModeAtCompletion:NO] autorelease];
     return [evaluator motionFixedFrom:_selection_begin To:_selection_end Type:LINEWISE inWindow:window];
     
 }
@@ -274,18 +274,18 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 - (XVimEvaluator*)i:(XVimWindow*)window
 {
     [self updateSelectionInWindow:window];
-	XVimOperatorAction *action = [[XVimSelectAction alloc] init];
-	XVimEvaluator *evaluator = [[XVimTextObjectEvaluator alloc] initWithContext:[XVimEvaluatorContext contextWithArgument:@"i"]
+	XVimOperatorAction *action = [[[XVimSelectAction alloc] init] autorelease];
+	XVimEvaluator *evaluator = [[[XVimTextObjectEvaluator alloc] initWithContext:[XVimEvaluatorContext contextWithArgument:@"i"]
 																 operatorAction:action 
 																	 withParent:self
-																	  inclusive:NO];
+																	  inclusive:NO] autorelease];
 	return evaluator;
 }
  
 - (XVimEvaluator*)m:(XVimWindow*)window{
     // 'm{letter}' sets a local mark.
-	return [[XVimMarkSetEvaluator alloc] initWithContext:[XVimEvaluatorContext contextWithArgument:@"m"]
-												  parent:self];
+	return [[[XVimMarkSetEvaluator alloc] initWithContext:[XVimEvaluatorContext contextWithArgument:@"m"]
+												  parent:self] autorelease];
 }
 
 - (XVimEvaluator*)p:(XVimWindow*)window{
@@ -301,12 +301,14 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
     NSUInteger loc = [view selectedRange].location;
     NSString *text = [[XVim instance] pasteText:[self yankRegister]];
     if (text.length > 0){
-        unichar uc = [text characterAtIndex:[text length] -1];
-        if ([[NSCharacterSet newlineCharacterSet] characterIsMember:uc]) {
-            if( [view isBlankLine:loc] && ![view isEOF:loc]){
-                [view setSelectedRange:NSMakeRange(loc+1,0)];
-            }else{
-                [view insertNewline];
+        if (_mode == MODE_CHARACTER) {
+            unichar uc = [text characterAtIndex:[text length] -1];
+            if ([[NSCharacterSet newlineCharacterSet] characterIsMember:uc]) {
+                if( [view isBlankLine:loc] && ![view isEOF:loc]){
+                    [view setSelectedRange:NSMakeRange(loc+1,0)];
+                }else{
+                    [view insertNewline];
+                }
             }
         }
         
@@ -314,7 +316,7 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
             [view insertText:text];
         }
         
-        [[NSPasteboard generalPasteboard] setString:current forType:NSStringPboardType];
+        [[XVim instance] onDeleteOrYank:FALSE Register:[self yankRegister] text:current];
     }
     return nil;
 }
@@ -384,11 +386,20 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 
 - (XVimEvaluator*)y:(XVimWindow*)window{
     [self updateSelectionInWindow:window];
-	XVimOperatorAction *operatorAction = [[XVimYankAction alloc] initWithYankRegister:[self yankRegister]];
-    XVimYankEvaluator *evaluator = [[XVimYankEvaluator alloc] initWithContext:[self contextCopy]
+	XVimOperatorAction *operatorAction = [[[XVimYankAction alloc] initWithYankRegister:[self yankRegister]] autorelease];
+    XVimYankEvaluator *evaluator = [[[XVimYankEvaluator alloc] initWithContext:[self contextCopy]
 															   operatorAction:operatorAction 
-																   withParent:self];
+																   withParent:self] autorelease];
     return [evaluator motionFixedFrom:_selection_begin To:_selection_end Type:CHARACTERWISE_INCLUSIVE inWindow:window];
+}
+
+- (XVimEvaluator*)Y:(XVimWindow*)window{
+    [self updateSelectionInWindow:window];
+	XVimOperatorAction *operatorAction = [[[XVimYankAction alloc] initWithYankRegister:[self yankRegister]] autorelease];
+    XVimYankEvaluator *evaluator = [[[XVimYankEvaluator alloc] initWithContext:[self contextCopy]
+															   operatorAction:operatorAction 
+																   withParent:self] autorelease];
+    return [evaluator motionFixedFrom:_selection_begin To:_selection_end Type:LINEWISE inWindow:window];
 }
 
 - (XVimEvaluator*)DQUOTE:(XVimWindow*)window{
@@ -397,7 +408,7 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 															  completion:^ XVimEvaluator* (NSString* rname, XVimEvaluatorContext *context)  
 						   {
 							   XVimRegister *xregister = [[XVim instance] findRegister:rname];
-							   if (xregister.isReadOnly == NO){
+							   if (xregister.isReadOnly == NO || [xregister.displayName isEqualToString:@"%"] ){
 								   [context setYankRegister:xregister];
 								   [context appendArgument:rname];
 								   return [self withNewContext:context];
@@ -412,10 +423,10 @@ static NSString* MODE_STRINGS[] = {@"-- VISUAL --", @"-- VISUAL LINE --", @"-- V
 - (XVimEvaluator*)EQUAL:(XVimWindow*)window{
     [self updateSelectionInWindow:window];
 	
-	XVimOperatorAction *operatorAction = [[XVimEqualAction alloc] init];
-    XVimEqualEvaluator *evaluator = [[XVimEqualEvaluator alloc] initWithContext:[self contextCopy]
+	XVimOperatorAction *operatorAction = [[[XVimEqualAction alloc] init] autorelease];
+    XVimEqualEvaluator *evaluator = [[[XVimEqualEvaluator alloc] initWithContext:[self contextCopy]
 																 operatorAction:operatorAction 
-																	 withParent:self];
+																	 withParent:self] autorelease];
 
     return [evaluator motionFixedFrom:_selection_begin To:_selection_end Type:CHARACTERWISE_INCLUSIVE inWindow:window];
 }
