@@ -8,6 +8,7 @@
 
 #import "Logger.h"
 #import "XVimWindowEvaluator.h"
+#import "XVimWindowManager.h"
 #import "XVimWindow.h"
 #import "IDEKit.h"
 #import "Utils.h"
@@ -245,34 +246,34 @@
     [XVIM_WINDOWMANAGER jumpToEditorDown];
     return nil;
 }
-- (XVimEvaluator*)j:(id)arg{
-    [XVIM_WINDOWMANAGER jumpToEditorDown];
-    return nil;
-}
+//- (XVimEvaluator*)j:(id)arg{
+//    [XVIM_WINDOWMANAGER jumpToEditorDown];
+//    return nil;
+//}
 - (XVimEvaluator*)Up:(id)arg{
     [XVIM_WINDOWMANAGER jumpToEditorUp];
     return nil;
 }
-- (XVimEvaluator*)k:(id)arg{
-    [XVIM_WINDOWMANAGER jumpToEditorUp];
-    return nil;
-}
+//- (XVimEvaluator*)k:(id)arg{
+//    [XVIM_WINDOWMANAGER jumpToEditorUp];
+//    return nil;
+//}
 - (XVimEvaluator*)Left:(id)arg{
     [XVIM_WINDOWMANAGER jumpToEditorLeft];
     return nil;
 }
-- (XVimEvaluator*)h:(id)arg{
-    [XVIM_WINDOWMANAGER jumpToEditorLeft];
-    return nil;
-}
+//- (XVimEvaluator*)h:(id)arg{
+//    [XVIM_WINDOWMANAGER jumpToEditorLeft];
+//    return nil;
+//}
 - (XVimEvaluator*)Right:(id)arg{
     [XVIM_WINDOWMANAGER jumpToEditorRight];
     return nil;
 }
-- (XVimEvaluator*)l:(id)arg{
-    [XVIM_WINDOWMANAGER jumpToEditorRight];
-    return nil;
-}
+//- (XVimEvaluator*)l:(id)arg{
+//    [XVIM_WINDOWMANAGER jumpToEditorRight];
+//    return nil;
+//}
 
 
 @end

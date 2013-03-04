@@ -10,6 +10,7 @@
 #import "DVTSourceTextViewHook.h"
 #import "DVTKit.h"
 #import "IDEKit.h"
+#import "IDESourceEditor.h"
 
 
 @interface EditorContextContext : NSObject {

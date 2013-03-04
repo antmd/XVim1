@@ -74,6 +74,12 @@
 		ED7B44FB16E4C6DD0071E891 /* GlobalMarksViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B44F916E4C6DD0071E891 /* GlobalMarksViewController.m */; };
 		ED7B44FC16E4C6DD0071E891 /* GlobalMarksViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = ED7B44FA16E4C6DD0071E891 /* GlobalMarksViewController.xib */; };
 		ED7B44FF16E4C7220071E891 /* XVimGlobalMark.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B44FE16E4C7220071E891 /* XVimGlobalMark.m */; };
+		ED7B450616E4DD5C0071E891 /* XVimQuickFixView.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B450116E4DD5C0071E891 /* XVimQuickFixView.m */; };
+		ED7B450716E4DD5C0071E891 /* XVimWindow+Xcode.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B450316E4DD5C0071E891 /* XVimWindow+Xcode.m */; };
+		ED7B450816E4DD5C0071E891 /* XVimWindowManager.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B450516E4DD5C0071E891 /* XVimWindowManager.m */; };
+		ED7B450D16E4DD720071E891 /* ProcessRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B450A16E4DD720071E891 /* ProcessRunner.m */; };
+		ED7B450E16E4DD720071E891 /* XVimTaskRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B450C16E4DD720071E891 /* XVimTaskRunner.m */; };
+		ED7B451116E4DD7E0071E891 /* NSAttributedString+Geometrics.m in Sources */ = {isa = PBXBuildFile; fileRef = ED7B451016E4DD7E0071E891 /* NSAttributedString+Geometrics.m */; };
 		F100DC2E150BB6BC002C703C /* XVimRegisterEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = F100DC2D150BB6BC002C703C /* XVimRegisterEvaluator.m */; };
 		F15805C71530B4000031175A /* XVimWindowEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = F15805C61530B4000031175A /* XVimWindowEvaluator.m */; };
 		F17D013B150861DC00A8111B /* XVimRegister.m in Sources */ = {isa = PBXBuildFile; fileRef = F17D013A150861DC00A8111B /* XVimRegister.m */; };
@@ -235,6 +241,18 @@
 		ED7B44FA16E4C6DD0071E891 /* GlobalMarksViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = GlobalMarksViewController.xib; path = XVim/GlobalMarksViewController.xib; sourceTree = "<group>"; };
 		ED7B44FD16E4C7220071E891 /* XVimGlobalMark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimGlobalMark.h; path = XVim/XVimGlobalMark.h; sourceTree = SOURCE_ROOT; };
 		ED7B44FE16E4C7220071E891 /* XVimGlobalMark.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimGlobalMark.m; path = XVim/XVimGlobalMark.m; sourceTree = SOURCE_ROOT; };
+		ED7B450016E4DD5C0071E891 /* XVimQuickFixView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimQuickFixView.h; path = XVim/XVimQuickFixView.h; sourceTree = SOURCE_ROOT; };
+		ED7B450116E4DD5C0071E891 /* XVimQuickFixView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimQuickFixView.m; path = XVim/XVimQuickFixView.m; sourceTree = SOURCE_ROOT; };
+		ED7B450216E4DD5C0071E891 /* XVimWindow+Xcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "XVimWindow+Xcode.h"; path = "XVim/XVimWindow+Xcode.h"; sourceTree = SOURCE_ROOT; };
+		ED7B450316E4DD5C0071E891 /* XVimWindow+Xcode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "XVimWindow+Xcode.m"; path = "XVim/XVimWindow+Xcode.m"; sourceTree = SOURCE_ROOT; };
+		ED7B450416E4DD5C0071E891 /* XVimWindowManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimWindowManager.h; path = XVim/XVimWindowManager.h; sourceTree = SOURCE_ROOT; };
+		ED7B450516E4DD5C0071E891 /* XVimWindowManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimWindowManager.m; path = XVim/XVimWindowManager.m; sourceTree = SOURCE_ROOT; };
+		ED7B450916E4DD720071E891 /* ProcessRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProcessRunner.h; path = XVim/ProcessRunner.h; sourceTree = "<group>"; };
+		ED7B450A16E4DD720071E891 /* ProcessRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ProcessRunner.m; path = XVim/ProcessRunner.m; sourceTree = "<group>"; };
+		ED7B450B16E4DD720071E891 /* XVimTaskRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimTaskRunner.h; path = XVim/XVimTaskRunner.h; sourceTree = "<group>"; };
+		ED7B450C16E4DD720071E891 /* XVimTaskRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimTaskRunner.m; path = XVim/XVimTaskRunner.m; sourceTree = "<group>"; };
+		ED7B450F16E4DD7E0071E891 /* NSAttributedString+Geometrics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "NSAttributedString+Geometrics.h"; path = "XVim/NSAttributedString+Geometrics.h"; sourceTree = SOURCE_ROOT; };
+		ED7B451016E4DD7E0071E891 /* NSAttributedString+Geometrics.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "NSAttributedString+Geometrics.m"; path = "XVim/NSAttributedString+Geometrics.m"; sourceTree = SOURCE_ROOT; };
 		F100DC2C150BB6BC002C703C /* XVimRegisterEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimRegisterEvaluator.h; path = XVim/XVimRegisterEvaluator.h; sourceTree = SOURCE_ROOT; };
 		F100DC2D150BB6BC002C703C /* XVimRegisterEvaluator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = XVimRegisterEvaluator.m; path = XVim/XVimRegisterEvaluator.m; sourceTree = SOURCE_ROOT; };
 		F15805C51530B4000031175A /* XVimWindowEvaluator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XVimWindowEvaluator.h; path = XVim/XVimWindowEvaluator.h; sourceTree = SOURCE_ROOT; };
@@ -354,6 +372,10 @@
 		A2C4E78F14E7EA0B00751199 /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				ED7B450916E4DD720071E891 /* ProcessRunner.h */,
+				ED7B450A16E4DD720071E891 /* ProcessRunner.m */,
+				ED7B450B16E4DD720071E891 /* XVimTaskRunner.h */,
+				ED7B450C16E4DD720071E891 /* XVimTaskRunner.m */,
 				ED7B44F816E4C6DD0071E891 /* GlobalMarksViewController.h */,
 				ED7B44F916E4C6DD0071E891 /* GlobalMarksViewController.m */,
 				ED7B44FA16E4C6DD0071E891 /* GlobalMarksViewController.xib */,
@@ -479,6 +501,8 @@
 		C345DDB6154CCE7E009F232E /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				ED7B450F16E4DD7E0071E891 /* NSAttributedString+Geometrics.h */,
+				ED7B451016E4DD7E0071E891 /* NSAttributedString+Geometrics.m */,
 				BF050D7915EBF3E100CD0D12 /* NSEvent+VimHelper.h */,
 				BF050D7A15EBF3E100CD0D12 /* NSEvent+VimHelper.m */,
 				A2D48B1D15347B5C0088AB71 /* NSString+VimHelper.h */,
@@ -492,6 +516,12 @@
 		C345DDB7154CCF1F009F232E /* Xcode+XVim */ = {
 			isa = PBXGroup;
 			children = (
+				ED7B450016E4DD5C0071E891 /* XVimQuickFixView.h */,
+				ED7B450116E4DD5C0071E891 /* XVimQuickFixView.m */,
+				ED7B450216E4DD5C0071E891 /* XVimWindow+Xcode.h */,
+				ED7B450316E4DD5C0071E891 /* XVimWindow+Xcode.m */,
+				ED7B450416E4DD5C0071E891 /* XVimWindowManager.h */,
+				ED7B450516E4DD5C0071E891 /* XVimWindowManager.m */,
 				A2ABFE1115497A3C002220E8 /* XVimStatusLine.h */,
 				A2ABFE1215497A3C002220E8 /* XVimStatusLine.m */,
 				A2AF5E16152EA92C00E13833 /* XVimSourceView.h */,
@@ -667,6 +697,12 @@
 				A2C1BB5316CEAC7F0066F420 /* Utils.m in Sources */,
 				ED7B44FB16E4C6DD0071E891 /* GlobalMarksViewController.m in Sources */,
 				ED7B44FF16E4C7220071E891 /* XVimGlobalMark.m in Sources */,
+				ED7B450616E4DD5C0071E891 /* XVimQuickFixView.m in Sources */,
+				ED7B450716E4DD5C0071E891 /* XVimWindow+Xcode.m in Sources */,
+				ED7B450816E4DD5C0071E891 /* XVimWindowManager.m in Sources */,
+				ED7B450D16E4DD720071E891 /* ProcessRunner.m in Sources */,
+				ED7B450E16E4DD720071E891 /* XVimTaskRunner.m in Sources */,
+				ED7B451116E4DD7E0071E891 /* NSAttributedString+Geometrics.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
