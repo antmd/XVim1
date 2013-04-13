@@ -9,6 +9,8 @@
 #import "IDEEditorHook.h"
 #import "IDEKit.h"
 #import "IDESourceEditor.h"
+#import "IDESourceCodeEditorHook.h"
+#import "XVimWindowManager.h"
 #import "Hooker.h"
 #import "Logger.h"
 #import "XVim.h"
@@ -59,6 +61,10 @@
             // For % register and to notify contents of editor is changed
             [editor addObserver:[XVim instance] forKeyPath:@"document" options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew context:nil];
             objc_setAssociatedObject(editor, DID_REGISTER_OBSERVER_KEY, [NSNumber numberWithBool:YES], OBJC_ASSOCIATION_RETAIN);
+            
+            if( [NSStringFromClass([editor class]) isEqualToString:@"IDESourceCodeEditor"] ){
+                [XVimWindowManager createWithEditor:(IDESourceCodeEditor*)editor];
+            }
 		}
     }
     //---- TO HERE ----

@@ -31,6 +31,10 @@
 @interface XVimExCommand()
 -(void)_expandSpecialExTokens:(XVimExArg*) arg contextDict:(NSDictionary*)ctx;
 -(NSString*)_altFilename:(NSString*)filename;
+@end
+// Maximum time in seconds for a 'bang' command to run before being killed as taking too long
+static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
+
 
 
 @implementation XVimExCmdname
@@ -848,8 +852,12 @@
         if( [cmdname.cmdName hasPrefix:[exarg cmd]] ){
             SEL method = NSSelectorFromString(cmdname.methodName);
             if( [self respondsToSelector:method] ){
+                TRACE_LOG(@"Ex Command '%@' (%@): performing selector '%@'.",[exarg cmd],cmdname.cmdName,cmdname.methodName);
                 [self performSelector:method withObject:exarg withObject:window];
                 break;
+            }
+            else {
+                ERROR_LOG(@"Ex Command '%@' (%@) has no associated method '%@': will ignore.",[exarg cmd],cmdname.cmdName,cmdname.methodName);
             }
         }
     }

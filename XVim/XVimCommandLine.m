@@ -18,6 +18,7 @@
 #import <objc/runtime.h>        
 
 #define DEFAULT_COMMAND_FIELD_HEIGHT 18.0
+static const char* KEY_COMMAND_LINE = "commandLine";
 
 
 @interface XVimCommandLine() {
@@ -315,16 +316,15 @@ static NSString* QuickFixPrompt = @"Press a key to continue...";
     [self layoutCmdline:[self superview]];
 }
 
-static char s_associate_key = 0;
 
 + (XVimCommandLine*)associateOf:(id)object
 {
-	return (XVimCommandLine*)objc_getAssociatedObject(object, &s_associate_key);
+	return (XVimCommandLine*)objc_getAssociatedObject(object, &KEY_COMMAND_LINE);
 }
 
 - (void)associateWith:(id)object
 {
-	objc_setAssociatedObject(object, &s_associate_key, self, OBJC_ASSOCIATION_RETAIN);
+	objc_setAssociatedObject(object, &KEY_COMMAND_LINE, self, OBJC_ASSOCIATION_RETAIN);
 }
 
 @end

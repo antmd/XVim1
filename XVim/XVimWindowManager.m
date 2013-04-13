@@ -218,8 +218,10 @@ static NSMutableDictionary* GlobalMarks = nil;
     IDENavigableItem* currentLocation = (self.editorMode==XVIM_EDITOR_MODE_STANDARD)?self.editor.editorContext.navigableItem: self.activeContext.navigableItem;
     
     if (self.editorMode != XVIM_EDITOR_MODE_GENIUS){
+        TRACE_LOG(@"Opening in adjacent window with alternate");
         [ NSApp sendAction:@selector(openInAdjacentEditorWithAlternate:) to:nil from:self ];
     }else {
+        TRACE_LOG(@"Adding assistant editor");
         [workspaceTabController addAssistantEditor:self];
         ((IDEEditorContext*)[ self.editorContexts lastObject ]).navigableItem =currentLocation; // Focus on just-opened editor
     }

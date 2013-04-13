@@ -582,6 +582,7 @@
 				A2B4BAB514D59F6600D817B0 /* Frameworks */,
 				A2B4BAB614D59F6600D817B0 /* Resources */,
 				A245BFB0150123AD00F048B1 /* CopyFiles */,
+				ED2F2ADE17195C2900C0D38E /* Install XVim */,
 			);
 			buildRules = (
 			);
@@ -628,6 +629,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		ED2F2ADE17195C2900C0D38E /* Install XVim */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Install XVim";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "\ninstall_dir=\"${HOME}/Library/Application Support/Developer/Shared/Xcode/Plug-ins\"\nif [[ \"${CONFIGURATION}\" == \"Release\" && -e \"$install_dir\" ]]; then\n    rm -r \"$install_dir/XVim.xcplugin\"\n    ditto -V \"${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}\" \"${install_dir}/${WRAPPER_NAME}\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A2B4BAB414D59F6600D817B0 /* Sources */ = {

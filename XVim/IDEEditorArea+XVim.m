@@ -10,7 +10,6 @@
 #import "IDEEditorArea+XVim.h"
 #import "Logger.h"
 
-static const char* KEY_COMMAND_LINE = "commandLine";
 @implementation IDEEditorArea (XVim)
 
 - (NSView*)textViewArea{
@@ -30,7 +29,7 @@ static const char* KEY_COMMAND_LINE = "commandLine";
     // Check if we already have command line in the _editorAreaAutoLayoutView.
     if( nil == [self commandLine] ){
         XVimCommandLine *cmd = [[[XVimCommandLine alloc] initWithEditorArea:self ] autorelease];
-        objc_setAssociatedObject( self, (void*)KEY_COMMAND_LINE, cmd, OBJC_ASSOCIATION_RETAIN);
+        [ cmd associateWith:self ];
         [layoutView addSubview:cmd];
         
         // This notification is to resize command line view according to the editor area size.
@@ -58,6 +57,6 @@ static const char* KEY_COMMAND_LINE = "commandLine";
 }
 
 - (XVimCommandLine*)commandLine{
-    return objc_getAssociatedObject(self, (void*)KEY_COMMAND_LINE);
+    return [ XVimCommandLine associateOf:self ];
 }
 @end

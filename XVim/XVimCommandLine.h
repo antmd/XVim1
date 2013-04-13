@@ -15,6 +15,7 @@ static const NSInteger XVimCommandLineTag = 1337;
 
 @interface XVimCommandLine : NSView
 
++ (XVimCommandLine*)associateOf:(id)object;
 - (id)initWithEditorArea:(IDEEditorArea*)editorArea;
 - (void)setModeString:(NSString*)string;
 - (void)setArgumentString:(NSString*)string;
@@ -22,6 +23,7 @@ static const NSInteger XVimCommandLineTag = 1337;
 - (void)quickFixWithString:(NSString*)string;
 - (NSUInteger)quickFixColWidth;
 - (void)didFrameChanged:(NSNotification*)notification;
+- (void)associateWith:(id)object;
 
 - (XVimCommandField*)commandField;
 @end

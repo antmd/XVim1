@@ -11,7 +11,3 @@
 @interface IDESourceCodeEditorHook : NSObject
 + (void)hook;
 @end
-
-@interface IDESourceCodeEditor(Hook)
--(void)didSetupEditor2_;
-@end
