@@ -28,14 +28,10 @@
 @synthesize arg,cmd,forceit,noRangeSpecified,lineBegin,lineEnd,addr_count;
 @end
 
-
 @interface XVimExCommand()
 -(void)_expandSpecialExTokens:(XVimExArg*) arg contextDict:(NSDictionary*)ctx;
 -(NSString*)_altFilename:(NSString*)filename;
 
-@end
-// Maximum time in seconds for a 'bang' command to run before being killed as taking too long
-static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 
 @implementation XVimExCmdname
 @synthesize cmdName,methodName;
@@ -1173,12 +1169,6 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
 - (void)xhelp:(XVimExArg*)args inWindow:(XVimWindow*)window
 {
     [NSApp sendAction:@selector(showQuickHelp:) to:nil from:self];
-}
-
-- (void)xccmd:(XVimExArg*)args inWindow:(XVimWindow*)window{
-    SEL sel = NSSelectorFromString([[args arg] stringByAppendingString:@":"]);
-    [window setForcusBackToSourceView];
-    [NSApp sendAction:sel  to:nil from:self];
 }
 
 - (void)sort:(XVimExArg *)args inWindow:(XVimWindow *)window
