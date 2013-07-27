@@ -640,7 +640,7 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
                 parsing++;
                 count++;
             }
-            addr = [[NSString stringWithCharacters:tmp length:count] unsignedIntValue];
+            addr = (NSUInteger)[[NSString stringWithCharacters:tmp length:count] integerValue];
             if( 0 == addr ){
                 addr = NSNotFound;
             }
@@ -682,7 +682,7 @@ static const NSTimeInterval EXTERNAL_COMMAND_TIMEOUT_SECS = 5.0;
                 parsing++;
                 count++;
             }
-            n = [[NSString stringWithCharacters:tmp length:count] unsignedIntValue];
+            n = (NSUInteger)[[NSString stringWithCharacters:tmp length:count] integerValue];
         }
         
         // Calc the address from base

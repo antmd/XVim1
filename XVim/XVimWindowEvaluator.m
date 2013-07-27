@@ -236,6 +236,14 @@
     [targetEditor takeFocus];
     return nil;
 }
+- (XVimEvaluator*)L:(id)arg{
+    [XVIM_WINDOWMANAGER moveEditorRight];
+    return nil;
+}
+- (XVimEvaluator*)H:(id)arg{
+    [XVIM_WINDOWMANAGER moveEditorLeft];
+    return nil;
+}
 - (XVimEvaluator*)C_w:(id)arg{
     [XVIM_WINDOWMANAGER jumpToOtherEditor];
     return nil;

@@ -296,58 +296,65 @@ self.currentLocation = currentLocation;
         [ nextContext takeFocus ];
     }
 }
--(void)jumpToEditorDown
+-(IDEEditorContext*)downEditorContext
 {
+    IDEEditorContext* context = nil;
     if (self.editorContexts)
     {
         bool canJumpBetweenAssistantAndPrimary = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_VERTICAL_MOTION];
         bool canJumpVerticallyInSecondaryEditors = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_VERTICAL_MOTION+2];
         
         if (!canJumpBetweenAssistantAndPrimary && self.activeContext.isPrimaryEditorContext) {
-            return;
+            return nil;
         }
         if (!canJumpVerticallyInSecondaryEditors && !self.activeContext.isPrimaryEditorContext) {
-            return;
+            return nil;
         }
         NSArray* sortedEditorContexts = [ self.editorContexts sortedArrayUsingFunction:yContextSort context:self.activeContext ] ;
     
         if (!self.activeContext.isPrimaryEditorContext && !canJumpBetweenAssistantAndPrimary)
         {
             sortedEditorContexts = [ sortedEditorContexts filteredArrayUsingDecider:^bool(id obj) {
-            return ![(IDEEditorContext*)obj isPrimaryEditorContext];
+                return ![(IDEEditorContext*)obj isPrimaryEditorContext];
             } ];
         }
         NSUInteger idxOfActiveContext = [ sortedEditorContexts indexOfObject:self.activeContext ];
         if (idxOfActiveContext != NSNotFound && idxOfActiveContext > 0)
         {
-            IDEEditorContext* nextContext = [ sortedEditorContexts objectAtIndex:(idxOfActiveContext - 1) ] ;
-            [ nextContext takeFocus ];
-            [ self.editor jumpToSelection:self ];
+            context = [ sortedEditorContexts objectAtIndex:(idxOfActiveContext - 1) ] ;
         }
     }
+    return context;
     
 }
--(void)jumpToEditorUp
+-(void)jumpToEditorDown
 {
+    [ [ self downEditorContext ] takeFocus ];
+    [ self.editor jumpToSelection:self ];
+
+}
+-(IDEEditorContext*)upEditorContext
+{
+    IDEEditorContext* context = nil;
     if (self.editorContexts)
     {
         bool canJumpBetweenAssistantAndPrimary = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_VERTICAL_MOTION];
         bool canJumpVerticallyInSecondaryEditors = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_VERTICAL_MOTION+2];
         
         if (!canJumpBetweenAssistantAndPrimary && self.activeContext.isPrimaryEditorContext) {
-            return;
+            return nil;
         }
         if (!canJumpVerticallyInSecondaryEditors
             && !self.activeContext.isPrimaryEditorContext
             && !canJumpBetweenAssistantAndPrimary) {
-            return;
+            return nil;
         }
         if (canJumpBetweenAssistantAndPrimary
             && !self.activeContext.isPrimaryEditorContext
             && !canJumpVerticallyInSecondaryEditors)
         {
             [ self.editorModeViewController.primaryEditorContext takeFocus];
-            return;
+            return nil;
         }
         NSArray* sortedEditorContexts = [ self.editorContexts sortedArrayUsingFunction:yContextSort context:self.activeContext ] ;
     
@@ -360,35 +367,43 @@ self.currentLocation = currentLocation;
         NSUInteger idxOfActiveContext = [ sortedEditorContexts indexOfObject:self.activeContext ];
         if ( idxOfActiveContext != NSNotFound && idxOfActiveContext < ([sortedEditorContexts count]-1))
         {
-            IDEEditorContext* nextContext = [ sortedEditorContexts objectAtIndex:(idxOfActiveContext + 1) ] ;
-            [ nextContext takeFocus ];
-            [ self.editor jumpToSelection:self ];
+            context = [ sortedEditorContexts objectAtIndex:(idxOfActiveContext + 1) ] ;
         }
     }
+    return context;
 }
--(void)jumpToEditorLeft
+
+-(void)jumpToEditorUp
 {
+    [ [self upEditorContext] takeFocus ];
+    [ self.editor jumpToSelection:self ];
+
+}
+
+-(IDEEditorContext*)leftEditorContext
+{
+    IDEEditorContext* context = nil;
     if (self.editorContexts)
     {
         bool canJumpBetweenAssistantAndPrimary = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_HORIZONTAL_MOTION];
         bool canJumpHorizontallyInSecondaryEditors = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_HORIZONTAL_MOTION+2];
         
         if (!canJumpBetweenAssistantAndPrimary && self.activeContext.isPrimaryEditorContext) {
-            return;
+            return nil;
         }
         
         if (!canJumpHorizontallyInSecondaryEditors
             && !self.activeContext.isPrimaryEditorContext
             && !canJumpBetweenAssistantAndPrimary)
         {
-            return;
+            return nil;
         }
         if (canJumpBetweenAssistantAndPrimary
             && !self.activeContext.isPrimaryEditorContext
             && !canJumpHorizontallyInSecondaryEditors)
         {
             [ self.editorModeViewController.primaryEditorContext takeFocus];
-            return;
+            return nil;
         }
         NSArray* sortedEditorContexts = [ self.editorContexts sortedArrayUsingFunction:xContextSort context:self.activeContext ] ;
     
@@ -401,25 +416,41 @@ self.currentLocation = currentLocation;
         NSUInteger idxOfActiveContext = [ sortedEditorContexts indexOfObject:self.activeContext ];
         if (idxOfActiveContext != NSNotFound && idxOfActiveContext > 0)
         {
-            IDEEditorContext* nextContext = [ sortedEditorContexts objectAtIndex:((idxOfActiveContext - 1) % [sortedEditorContexts count] )] ;
-            [ nextContext takeFocus ];
-            [ self.editor jumpToSelection:self ];
+            context = [ sortedEditorContexts objectAtIndex:((idxOfActiveContext - 1) % [sortedEditorContexts count] )] ;
         }
     }
-    
+    return context;
 }
--(void)jumpToEditorRight
+-(BOOL)jumpToEditorLeft
 {
+    IDEEditorContext* leftContext = [ self leftEditorContext ];
+    if (leftContext) {
+        [ leftContext takeFocus ];
+        [ self.editor jumpToSelection:self ];
+        return YES;
+    }
+    return NO;
+
+}
+-(void)moveEditorLeft
+{
+    if ([ self jumpToEditorLeft]) {
+        [ self moveEditorRightTakingSelection:NO ];
+    }
+}
+-(IDEEditorContext*)rightEditorContext
+{
+    IDEEditorContext* context = nil;
     if (self.editorContexts)
     {
         bool canJumpBetweenAssistantAndPrimary = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_HORIZONTAL_MOTION];
         bool canJumpHorizontallyInSecondaryEditors = canJumpBetweenPrimaryAndSecondaryWhenMoving[self.assistantEditorsLayoutMode][XVIM_HORIZONTAL_MOTION+2];
         
         if (!canJumpBetweenAssistantAndPrimary && self.activeContext.isPrimaryEditorContext) {
-            return;
+            return nil;
         }
         if (!canJumpHorizontallyInSecondaryEditors && !self.activeContext.isPrimaryEditorContext) {
-            return;
+            return nil;
         }
         NSArray* sortedEditorContexts = [ self.editorContexts sortedArrayUsingFunction:xContextSort context:self.activeContext ] ;
     
@@ -432,12 +463,41 @@ self.currentLocation = currentLocation;
         NSUInteger idxOfActiveContext = [ sortedEditorContexts indexOfObject:self.activeContext ];
         if ( idxOfActiveContext != NSNotFound && idxOfActiveContext < ([sortedEditorContexts count]-1))
         {
-            IDEEditorContext* nextContext = [ sortedEditorContexts objectAtIndex:((idxOfActiveContext + 1) % [sortedEditorContexts count] )] ;
-            [ nextContext takeFocus ];
-            [ self.editor jumpToSelection:self ];
+            context = [ sortedEditorContexts objectAtIndex:((idxOfActiveContext + 1) % [sortedEditorContexts count] )] ;
+        }
+    }
+    return context;
+}
+
+-(void)jumpToEditorRight
+{
+    [ [self rightEditorContext] takeFocus ];
+    [ self.editor jumpToSelection:self ];
+}
+-(void)moveEditorRightTakingSelection:(BOOL)takeSelection
+{
+    IDEEditorGeniusMode *geniusMode = (IDEEditorGeniusMode*)[self.editorArea editorModeViewController];
+    IDEEditorContext* rightContext = [ self rightEditorContext ];
+    if (rightContext) {
+        id currentPosition = [ self.currentIDELocation archivableRepresentation ];
+        self.currentIDELocation = rightContext.navigableItem;
+        rightContext.navigableItem = [ geniusMode editorContext:rightContext
+              navigableItemForEditingFromArchivedRepresentation:currentPosition
+                                                          error:nil ];
+        if (takeSelection) {
+            [ rightContext takeFocus ];
+            [ self.editor performSelector:@selector(jumpToSelection:)
+                               withObject:self
+                               afterDelay:0. ];
         }
     }
 }
+-(void)moveEditorRight
+{
+    [ self moveEditorRightTakingSelection:YES ];
+    
+}
+
 -(void)changeToIssuesNavigator
 {
     [self.workspaceTabController changeToIssuesNavigator:self ];

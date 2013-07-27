@@ -129,7 +129,7 @@ NSString* expandTabs(NSString* inStr);
                 [ returnString appendString:output ];
             }
 
-            outputReceived = YES;
+            outputReceived |= (output && [output length]>0);
         };
 
         @try {
