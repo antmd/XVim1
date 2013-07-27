@@ -27,7 +27,7 @@ typedef bool (^XvimDecider)(id obj) ;
 @end
 
 @interface XVimWindowManager() {
-	IDESourceCodeEditor *_editor;
+    NSWindow* _editorWindow;
 }
 - (void)setHorizontal;
 - (void)setVertical;
@@ -46,7 +46,6 @@ typedef bool (^XvimDecider)(id obj) ;
 
 
 @implementation XVimWindowManager
-@synthesize  editor = _editor;
 @dynamic workspaceTabController;
 @dynamic editorArea;
 @dynamic editorModeViewController;
@@ -138,6 +137,20 @@ static NSMutableDictionary* GlobalMarks = nil;
     return [(IDESourceCodeEditor*)[(DVTSourceTextView*)[ self.workspaceWindow firstResponder ] delegate ] editorContext ];
 }
 
+-(IDESourceCodeEditor*)editor
+{
+    IDEWorkspaceWindowController* windowDelegate = (IDEWorkspaceWindowController*)[ _editorWindow delegate ];
+    if ([windowDelegate isKindOfClass:NSClassFromString(@"IDEWorkspaceWindowController")]) {
+        IDEEditorArea* editorArea = [windowDelegate editorArea];
+        if ([editorArea isKindOfClass:NSClassFromString(@"IDEEditorArea")]) {
+            IDEEditorContext* editorContext = [ editorArea lastActiveEditorContext ];
+            if ([editorContext isKindOfClass:NSClassFromString(@"IDEEditorContext")]) {
+                return (IDESourceCodeEditor*)[ editorContext editor ];
+            }
+        }
+    }
+    return nil;
+}
 
 -(NSArray*)editorContexts
 {
@@ -206,14 +219,15 @@ static NSMutableDictionary* GlobalMarks = nil;
 {
     self = [super init];
     if (self) {
-        _editor = editor;
+        _editorWindow = [[ editor view ] window];
         }
     return self;
 }
 
 - (void)addEditorWindow
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = self.editor;
+    if (self.editor == nil) { return; }
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDENavigableItem* currentLocation = (self.editorMode==XVIM_EDITOR_MODE_STANDARD)?self.editor.editorContext.navigableItem: self.activeContext.navigableItem;
     
@@ -242,7 +256,8 @@ static NSMutableDictionary* GlobalMarks = nil;
 
 - (void)removeEditorWindow
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = self.editor;
+    if (editor == nil) { return; }
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     IDEEditorArea *editorArea = [workspaceTabController editorArea];
     if (self.editorMode != XVIM_EDITOR_MODE_GENIUS){
@@ -273,14 +288,16 @@ self.currentLocation = currentLocation;
 
 - (void)setHorizontal
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = self.editor;
+    if (editor == nil ) { return; }
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     [workspaceTabController changeToAssistantLayout_BH:self];
 }
 
 - (void)setVertical
 {
-    IDESourceCodeEditor *editor = _editor;
+    IDESourceCodeEditor *editor = self.editor;
+    if (editor == nil ) { return; }
     IDEWorkspaceTabController *workspaceTabController = [editor workspaceTabController];
     [workspaceTabController changeToAssistantLayout_RV:self];
 }

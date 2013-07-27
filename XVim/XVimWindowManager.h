@@ -26,7 +26,7 @@ typedef enum {
 
 
 @interface XVimWindowManager : NSObject
-@property (weak) IDESourceCodeEditor *editor ;
+@property (strong) IDESourceCodeEditor *editor ;
 + (void)createWithEditor:(IDESourceCodeEditor*)editor;
 + (XVimWindowManager*)instance;
 - (id)initWithEditor:(IDESourceCodeEditor*)editor;
