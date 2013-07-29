@@ -178,13 +178,11 @@ static NSMutableDictionary* GlobalMarks = nil;
     self.activeContext.navigableItem = IDELocation;
 }
 
--(DVTTextDocumentLocation*)currentLocation
+-(DVTTextDocumentLocation*)locationForEditor:(IDEEditor*)editor
 {
     DVTTextDocumentLocation* loc = nil;
-    if (self.editorMode == XVIM_EDITOR_MODE_GENIUS
-        || self.editorMode == XVIM_EDITOR_MODE_STANDARD)
-    {
-        IDEEditor *editor = [self.activeContext editor];
+    if (editor != nil
+        && (self.editorMode == XVIM_EDITOR_MODE_GENIUS || self.editorMode == XVIM_EDITOR_MODE_STANDARD) ) {
         NSArray* currentLocations = [ editor currentSelectedDocumentLocations ];
         if (currentLocations && [ currentLocations count ] > 0)
         {
@@ -192,6 +190,12 @@ static NSMutableDictionary* GlobalMarks = nil;
         }
     }
     return loc;
+}
+
+
+-(DVTTextDocumentLocation*)currentLocation
+{
+    return [ self locationForEditor:self.activeContext.editor ];
 }
 
 

@@ -248,6 +248,10 @@
     [XVIM_WINDOWMANAGER jumpToOtherEditor];
     return nil;
 }
+- (XVimEvaluator*)C_o:(id)arg{
+    [XVIM_WINDOWMANAGER closeAllButActive];
+    return nil;
+}
 - (XVimEvaluator*)Down:(id)arg{
     [XVIM_WINDOWMANAGER jumpToEditorDown];
     return nil;
